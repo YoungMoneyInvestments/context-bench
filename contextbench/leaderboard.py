@@ -40,5 +40,18 @@ def to_markdown(judgments: list[Judgment], deltas: list[AblationDelta] | None = 
             lines.append(
                 f"| `{d.model}` | `{d.skill_name}` | {d.bare_score} | {d.with_skill_score} | {d.delta:+.2f} | {icon} **{d.recommendation}** |"
             )
+        lines.extend([
+            "",
+            "**What to do about it** (this is whole-bundle Delta, not per-file — it tells you"
+            " *whether* to cut, not *which lines*):",
+            "- ✅ **KEEP** (Δ ≥ +1.5): clear win here, leave it as-is.",
+            "- 🧹 **PROMPT_BLOAT** (-1.0 < Δ < +1.5): not clearly earning its token cost on these"
+            " case types. Split the bundle into smaller files and re-run — the ones with Δ near"
+            " zero on their own are what to cut first.",
+            "- ❌ **REMOVE** (Δ ≤ -1.0): actively made the model worse here. Don't just delete it —"
+            " read a couple of `results/judged_*.json` reasoning strings for this profile first;"
+            " a large negative Δ is sometimes a harness artifact (e.g. issue #1's raw"
+            " system-prompt wrapping) rather than the content itself being bad.",
+        ])
 
     return "\n".join(lines)

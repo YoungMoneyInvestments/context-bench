@@ -1,9 +1,14 @@
 """Thin per-provider callers. Returns (text, input_tokens, output_tokens).
 
 Supports:
-1. Local CLI harness execution (`claude -p`) using your active local OAuth subscriptions.
+1. Local CLI harness execution (`claude -p`, `codex exec`, `grok --single`) using your
+   active local OAuth/subscription sessions — no API key needed.
 2. Direct API keys (`anthropic`, `openai`, `xai`) if configured.
 3. OmniRoute proxy fallback if explicitly configured.
+
+Gemini and Cursor are not wired in: `gemini` CLI is installed but has never completed its
+interactive browser OAuth login (verified live — a headless call hung on the auth prompt);
+`c‍ursor-agent` isn't installed at all. See gaps-inbox / repo issues for status.
 """
 from __future__ import annotations
 
@@ -72,6 +77,68 @@ def call_cli_harness(model: str, system: str, prompt: str) -> tuple[str, int, in
                 os.unlink(sys_path)
             except OSError:
                 pass
+
+
+def call_grok_cli(model: str, system: str, prompt: str) -> tuple[str, int, int]:
+    """Execute via the local `grok` CLI (own OAuth/session, independent of XAI_API_KEY —
+    verified live: XAI_API_KEY was credit-exhausted but this path still worked).
+
+    `grok --single` has no real system-role flag, so `system` is concatenated as plain
+    text ahead of the task. It is NOT relabeled "System Instructions:" — the caller
+    (wrap_request) already picked the framing for the active --wrap mode (e.g. fair mode's
+    "optional reference" preamble); slapping our own "System Instructions:" label back on
+    top would silently reproduce the raw-mode wrapping bug from issue #1 for this provider
+    only, regardless of which --wrap mode was requested.
+    """
+    full_prompt = f"{system}\n\n{prompt}" if system else prompt
+    cmd = ["grok", "--single", full_prompt, "--model", model, "--cwd", _NEUTRAL_CWD]
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=180, check=True)
+        text = res.stdout.strip()
+        in_tok = len(full_prompt.split()) * 2
+        out_tok = len(text.split()) * 2
+        return text, in_tok, out_tok
+    except Exception as e:
+        raise RuntimeError(f"grok CLI execution failed: {e}") from e
+
+
+def call_codex_cli(model: str, system: str, prompt: str) -> tuple[str, int, int]:
+    """Execute via the local `codex exec` CLI (own ChatGPT/OAuth session).
+
+    Runs from the same neutral cwd as the Claude harness: codex loads this repo's own
+    project hooks/skills/MCP config otherwise, burning tens of thousands of tokens on
+    ambient noise instead of the Case (verified live: a trivial "pong" prompt run from
+    this repo cost 27.5k tokens before this fix). `--output-last-message` isolates the
+    final answer from interleaved hook/MCP log lines that otherwise pollute stdout.
+
+    `codex exec` has no system-role flag either, so `system` is concatenated as plain
+    text, not relabeled "System Instructions:" — same reasoning as call_grok_cli.
+    """
+    full_prompt = f"{system}\n\n{prompt}" if system else prompt
+    fd, out_path = tempfile.mkstemp(prefix="contextbench-codex-out-", suffix=".txt")
+    os.close(fd)
+    cmd = [
+        "codex", "exec",
+        "-C", _NEUTRAL_CWD,
+        "--skip-git-repo-check",
+        "--model", model,
+        "--output-last-message", out_path,
+        full_prompt,
+    ]
+    try:
+        subprocess.run(cmd, capture_output=True, text=True, timeout=180, check=True)
+        with open(out_path) as f:
+            text = f.read().strip()
+        in_tok = len(full_prompt.split()) * 2
+        out_tok = len(text.split()) * 2
+        return text, in_tok, out_tok
+    except Exception as e:
+        raise RuntimeError(f"codex CLI execution failed: {e}") from e
+    finally:
+        try:
+            os.unlink(out_path)
+        except OSError:
+            pass
 
 
 def call_omniroute(model: str, system: str, prompt: str) -> tuple[str, int, int]:
@@ -184,4 +251,6 @@ CALLERS = {
     "openai": call_openai,
     "omniroute": call_omniroute,
     "cli": call_cli_harness,
+    "grok": call_grok_cli,
+    "codex": call_codex_cli,
 }

@@ -19,6 +19,8 @@ MODEL_ALIASES = {
     "claude-opus-5": ("anthropic", "claude-opus-5"),
     "claude-sonnet-5": ("anthropic", "claude-sonnet-5"),
     "claude-haiku-4-5-20251001": ("anthropic", "claude-haiku-4-5-20251001"),
+    "grok": ("grok", "grok-4.6"),
+    "codex": ("codex", "gpt-5.6-luna"),
 }
 
 
@@ -65,14 +67,20 @@ def default_profiles(
     if context_dirs is None:
         context_dirs = [("example", "examples/context")]
 
-    if provider in (None, "auto"):
-        use_cli = not os.environ.get("ANTHROPIC_API_KEY")
-    else:
-        use_cli = provider == "cli"
+    # "auto" only forces the free Claude-OAuth harness for *anthropic*-sourced models when
+    # no ANTHROPIC_API_KEY is set. Explicit non-anthropic tokens (xai:, openai:, grok:,
+    # codex:) always route to their own caller — they have their own auth, and forcing
+    # them through `claude -p` used to silently run them as Claude calls (bug, fixed here).
+    explicit_provider = provider if provider not in (None, "auto") else None
 
     profiles: list[Profile] = []
     for src_provider, model in models:
-        effective = "cli" if use_cli else (provider if provider not in (None, "auto") else src_provider)
+        if explicit_provider:
+            effective = explicit_provider
+        elif src_provider == "anthropic" and not os.environ.get("ANTHROPIC_API_KEY"):
+            effective = "cli"
+        else:
+            effective = src_provider
         if include_bare:
             profiles.append(
                 Profile(id=f"{model}+bare", provider=effective, model=model, context_dir=None)
