@@ -1,4 +1,4 @@
-"""Core dataclasses. See CONTEXT.md for the vocabulary these implement."""
+"""Core dataclasses for contextbench benchmarks and skill ablation."""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -16,7 +16,7 @@ class Case:
 @dataclass
 class Profile:
     id: str
-    provider: str  # "anthropic" | "xai" | "openai"
+    provider: str  # "anthropic" | "xai" | "openai" | "omniroute"
     model: str  # provider-specific model id
     context_dir: str | None  # None => bare (empty system prompt)
 
@@ -39,3 +39,13 @@ class Judgment:
     score: int  # 1-10
     reasoning: str
     judge_model: str
+
+
+@dataclass
+class AblationDelta:
+    model: str
+    skill_name: str
+    bare_score: float
+    with_skill_score: float
+    delta: float
+    recommendation: str  # "KEEP" | "PROMPT_BLOAT" | "REMOVE"

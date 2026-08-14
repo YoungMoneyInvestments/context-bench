@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from contextbench.models import Judgment
+from contextbench.models import AblationDelta, Judgment
 
 
 def aggregate(judgments: list[Judgment]) -> list[tuple[str, float, int]]:
@@ -16,9 +16,29 @@ def aggregate(judgments: list[Judgment]) -> list[tuple[str, float, int]]:
     return sorted(rows, key=lambda r: r[1], reverse=True)
 
 
-def to_markdown(judgments: list[Judgment]) -> str:
+def to_markdown(judgments: list[Judgment], deltas: list[AblationDelta] | None = None) -> str:
     rows = aggregate(judgments)
-    lines = ["| Profile | Mean score | Cases judged |", "|---|---|---|"]
+    lines = [
+        "# Context-Bench Leaderboard",
+        "",
+        "| Profile | Mean Score | Cases Judged |",
+        "|---|---|---|",
+    ]
     for pid, mean, n in rows:
         lines.append(f"| `{pid}` | {mean:.1f} | {n} |")
+
+    if deltas:
+        lines.extend([
+            "",
+            "## Skill Ablation & Recommendation Matrix",
+            "",
+            "| Model | Skill / Context | Bare Score | With Context | Delta (Δ) | Recommendation |",
+            "|---|---|---|---|---|---|",
+        ])
+        for d in deltas:
+            icon = "✅" if d.recommendation == "KEEP" else ("❌" if d.recommendation == "REMOVE" else "🧹")
+            lines.append(
+                f"| `{d.model}` | `{d.skill_name}` | {d.bare_score} | {d.with_skill_score} | {d.delta:+.2f} | {icon} **{d.recommendation}** |"
+            )
+
     return "\n".join(lines)

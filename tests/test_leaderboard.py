@@ -1,11 +1,12 @@
-"""No network calls. Run with: python3 tests/test_leaderboard.py"""
+"""Unit tests for contextbench ablation and leaderboard formatting."""
 import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+from contextbench.ablation import analyze_deltas
 from contextbench.leaderboard import aggregate, to_markdown
-from contextbench.models import Judgment
+from contextbench.models import AblationDelta, Judgment, Profile
 
 
 def test_aggregate_ranks_higher_mean_first():
@@ -22,24 +23,36 @@ def test_aggregate_ranks_higher_mean_first():
     assert rows[1][1] == 4.0
 
 
-def test_aggregate_excludes_unparseable_zero_scores():
-    judgments = [
-        Judgment("case1", "profileA", 0, "unparseable judge output", "judge"),
-        Judgment("case2", "profileA", 9, "great", "judge"),
+def test_analyze_deltas_recommends_remove_on_hobbling():
+    profiles = [
+        Profile("claude-opus-5+bare", "anthropic", "claude-opus-5", None),
+        Profile("claude-opus-5+example", "anthropic", "claude-opus-5", "examples/context"),
     ]
-    rows = aggregate(judgments)
-    assert rows == [("profileA", 9.0, 1)]
+    judgments = [
+        Judgment("case1", "claude-opus-5+bare", 9, "great", "judge"),
+        Judgment("case2", "claude-opus-5+bare", 9, "great", "judge"),
+        Judgment("case1", "claude-opus-5+example", 6, "hobbled", "judge"),
+        Judgment("case2", "claude-opus-5+example", 6, "hobbled", "judge"),
+    ]
+    deltas = analyze_deltas(judgments, profiles)
+    assert len(deltas) == 1
+    assert deltas[0].recommendation == "REMOVE"
+    assert deltas[0].delta == -3.0
 
 
-def test_to_markdown_produces_a_table_row_per_profile():
+def test_to_markdown_includes_ablation_matrix():
     judgments = [Judgment("case1", "profileA", 7, "fine", "judge")]
-    md = to_markdown(judgments)
+    deltas = [
+        AblationDelta("claude-opus-5", "example", 9.0, 6.0, -3.0, "REMOVE")
+    ]
+    md = to_markdown(judgments, deltas)
     assert "profileA" in md
-    assert "7.0" in md
+    assert "Skill Ablation & Recommendation Matrix" in md
+    assert "REMOVE" in md
 
 
 if __name__ == "__main__":
     test_aggregate_ranks_higher_mean_first()
-    test_aggregate_excludes_unparseable_zero_scores()
-    test_to_markdown_produces_a_table_row_per_profile()
+    test_analyze_deltas_recommends_remove_on_hobbling()
+    test_to_markdown_includes_ablation_matrix()
     print("ok")

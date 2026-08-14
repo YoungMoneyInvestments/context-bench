@@ -5,6 +5,7 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+from contextbench.ablation import analyze_deltas
 from contextbench.cases import load_cases
 from contextbench.leaderboard import to_markdown
 from contextbench.models import Case, Judgment, Run
@@ -44,7 +45,8 @@ def main() -> None:
     judged_path.write_text(json.dumps(judgments_to_dicts(judgments), indent=2))
     print(f"[cli] wrote {judged_path}")
 
-    board = to_markdown(judgments)
+    deltas = analyze_deltas(judgments, profiles)
+    board = to_markdown(judgments, deltas)
     board_path = out_dir / f"leaderboard_{ts}.md"
     board_path.write_text(board + "\n")
     print(f"[cli] wrote {board_path}\n\n{board}")
