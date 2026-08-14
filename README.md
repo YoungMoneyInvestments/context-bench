@@ -46,12 +46,14 @@ Writes `results/leaderboard_<ts>.md`. The leaderboard opens with a class matrix,
 That picture is the **shape** of the output, not a scored run. Your table is the one in `results/`.
 
 <p align="center">
-  <a href="https://github.com/YoungMoneyInvestments/context-bench/blob/master/docs/assets/context-bench.mp4">
-    <img src="docs/assets/film-poster.jpg" alt="51s film: Boris Cherny, then skills and hooks on Claude, Codex, and Grok" width="100%" />
+  <a href="https://youngmoneyinvestments.github.io/context-bench/watch.html">
+    <img src="docs/assets/film-poster.jpg" alt="Play the 51s film: Boris Cherny, then skills and hooks on Claude, Codex, and Grok" width="100%" />
   </a>
 </p>
 
-[51s film](https://github.com/YoungMoneyInvestments/context-bench/blob/master/docs/assets/context-bench.mp4) · [raw mp4](https://github.com/YoungMoneyInvestments/context-bench/raw/master/docs/assets/context-bench.mp4) · [9:16](https://github.com/YoungMoneyInvestments/context-bench/blob/master/docs/assets/context-bench-9x16.mp4)
+GitHub’s file viewer will not play this mp4. Watch it here:
+
+**[Play the 51s film](https://youngmoneyinvestments.github.io/context-bench/watch.html)** · [16:9 mp4](https://youngmoneyinvestments.github.io/context-bench/assets/context-bench.mp4) · [9:16](https://youngmoneyinvestments.github.io/context-bench/assets/context-bench-9x16.mp4) · [release](https://github.com/YoungMoneyInvestments/context-bench/releases/tag/film)
 
 ## More commands
 
