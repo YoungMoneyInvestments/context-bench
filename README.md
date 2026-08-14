@@ -13,11 +13,11 @@ Point it at whatever directory that provider uses for skills, hooks, or memory �
 
 <p align="center">
   <a href="https://github.com/YoungMoneyInvestments/context-bench/blob/master/docs/assets/context-bench.mp4">
-    <img src="docs/assets/film-poster.jpg" alt="Watch the 50s film: Boris Cherny, then skills and hooks on Claude, Codex, and Grok" width="100%" />
+    <img src="docs/assets/film-poster.jpg" alt="Watch the 51s film: Boris Cherny, then skills and hooks on Claude, Codex, and Grok" width="100%" />
   </a>
 </p>
 
-[50s film (play on GitHub)](https://github.com/YoungMoneyInvestments/context-bench/blob/master/docs/assets/context-bench.mp4) · [raw mp4](https://github.com/YoungMoneyInvestments/context-bench/raw/master/docs/assets/context-bench.mp4) · [9:16](https://github.com/YoungMoneyInvestments/context-bench/blob/master/docs/assets/context-bench-9x16.mp4)
+[51s film (play on GitHub)](https://github.com/YoungMoneyInvestments/context-bench/blob/master/docs/assets/context-bench.mp4) · [raw mp4](https://github.com/YoungMoneyInvestments/context-bench/raw/master/docs/assets/context-bench.mp4) · [9:16](https://github.com/YoungMoneyInvestments/context-bench/blob/master/docs/assets/context-bench-9x16.mp4)
 
 <p align="center">
   <img src="docs/assets/loop.svg" alt="Each class of your Claude home is scored alone against bare, across models. Fading means stronger models get less lift." width="100%" />
