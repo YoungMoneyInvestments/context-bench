@@ -75,6 +75,7 @@ def run_all(
     wrap: str = "fair",
     *,
     disable_slash_baseline: bool | None = None,
+    verbose: bool = True,
 ) -> list[Run]:
     """Sequential on purpose — a benchmark isn't a load test, and sequential runs are easy to
     read logs for. Parallelize later if the case/profile matrix gets big enough to matter."""
@@ -83,7 +84,8 @@ def run_all(
     runs = []
     for case in cases:
         for profile in profiles:
-            print(f"[run] {case.id} x {profile.id}")
+            if verbose:
+                print(f"[run] {case.id} x {profile.id}")
             try:
                 runs.append(
                     run_one(
@@ -94,7 +96,8 @@ def run_all(
                     )
                 )
             except Exception as e:  # noqa: BLE001 - one bad profile/case shouldn't kill the run
-                print(f"[run] FAILED {case.id} x {profile.id}: {e}")
+                if verbose:
+                    print(f"[run] FAILED {case.id} x {profile.id}: {e}")
     return runs
 
 

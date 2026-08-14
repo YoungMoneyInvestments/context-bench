@@ -17,9 +17,58 @@ try:
 except ImportError:  # Elo shipped in a parallel change; class split must run without it
     bootstrap_delta_ci = None
     elo_ratings = None
+from contextbench.dashboard import write_dashboard
 from contextbench.profiles import HARNESS_MODES, default_profiles, label_for_context_dir, resolve_models
 from contextbench.runner import run_all, runs_to_dicts
 from contextbench.judge import judge_all, judgments_to_dicts
+
+DEMO_CASE_LIMIT = 3
+DEMO_CONTEXT_DIR = "examples/context"
+DEMO_MODELS = "demo:demo-haiku,demo:demo-sonnet"
+DEMO_PROVIDER = "demo"
+DEMO_JUDGE_MODEL = "demo-judge"
+
+
+def _run_demo(args: argparse.Namespace) -> None:
+    """Offline mock bench: in-process fakes only, then a local dashboard."""
+    cases = load_cases(args.cases_dir)[:DEMO_CASE_LIMIT]
+    if not cases:
+        raise SystemExit(f"no cases found in {args.cases_dir}")
+
+    models = resolve_models(DEMO_MODELS)
+    profiles = default_profiles(
+        context_dirs=[("example", DEMO_CONTEXT_DIR)],
+        models=models,
+        provider=DEMO_PROVIDER,
+        include_bare=True,
+        harness="notes",
+    )
+    runs = run_all(cases, profiles, wrap="fair", verbose=False)
+    if not runs:
+        raise SystemExit("demo produced no runs")
+
+    ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    out_dir = Path(args.out_dir)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    (out_dir / f"runs_{ts}.json").write_text(json.dumps(runs_to_dicts(runs), indent=2))
+
+    cases_by_id = {c.id: c for c in cases}
+    judgments = judge_all(
+        runs, cases_by_id, DEMO_PROVIDER, DEMO_JUDGE_MODEL, verbose=False
+    )
+    (out_dir / f"judged_{ts}.json").write_text(
+        json.dumps(judgments_to_dicts(judgments), indent=2)
+    )
+
+    deltas = analyze_deltas(judgments, profiles)
+    elo = elo_ratings(judgments) if elo_ratings else None
+    delta_ci = bootstrap_delta_ci(judgments, profiles) if bootstrap_delta_ci else None
+    board = to_markdown(judgments, deltas, elo=elo, delta_ci=delta_ci or None)
+    board_path = out_dir / f"leaderboard_{ts}.md"
+    board_path.write_text(board + "\n")
+
+    dash = write_dashboard(board_path, out_dir / "dashboard.html")
+    print(f"Demo ready: {dash.resolve()}")
 
 
 def _expand_dirs(paths: list[str], split: str) -> list[tuple]:
@@ -97,10 +146,19 @@ def main() -> None:
     )
     p.add_argument("--no-bare", action="store_true", help="skip the bare (no extra bundle) arm")
     p.add_argument("--smoke", action="store_true", help="first case × first model only")
+    p.add_argument(
+        "--demo",
+        action="store_true",
+        help="offline in-process mock run (no OAuth, no API keys, no network)",
+    )
     p.add_argument("--judge-provider", default=None)
     p.add_argument("--judge-model", default="claude-opus-5")
     p.add_argument("--no-judge", action="store_true", help="run only, skip scoring")
     args = p.parse_args()
+
+    if args.demo:
+        _run_demo(args)
+        return
 
     cases = load_cases(args.cases_dir)
     if not cases:

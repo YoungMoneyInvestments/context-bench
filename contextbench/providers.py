@@ -12,6 +12,8 @@ prefer `gmi` (subscription) over raw `gemini -p` (interactive OAuth still incomp
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import os
 import subprocess
 import tempfile
@@ -369,6 +371,50 @@ def _call_openai_compatible(
     return text, in_tok, out_tok
 
 
+def _demo_seed(*parts: str) -> int:
+    blob = "\0".join(parts).encode()
+    return int(hashlib.sha256(blob).hexdigest()[:16], 16)
+
+
+def call_demo(model: str, system: str, prompt: str) -> tuple[str, int, int]:
+    """Deterministic in-process fake model / judge. No subprocess, no network."""
+    if "Reply with ONLY a JSON object" in prompt:
+        text = _demo_judge_text(model, prompt)
+    else:
+        text = _demo_model_text(model, system, prompt)
+    in_tok = max(1, (len(prompt.split()) + len(system.split())) * 2)
+    out_tok = max(1, len(text.split()) * 2)
+    return text, in_tok, out_tok
+
+
+def _demo_model_text(model: str, system: str, prompt: str) -> str:
+    first_line = prompt.strip().splitlines()[0][:200] if prompt.strip() else ""
+    has_ctx = bool(system.strip())
+    lines = [
+        f"Demo {model} ({'context' if has_ctx else 'bare'}).",
+        f"Request: {first_line}",
+        "Answer: here is a concrete, rubric-aligned response generated offline.",
+    ]
+    if has_ctx:
+        lines.append("I used the bundled Acme Labs notes (short sentences, no invented facts).")
+        lines.append("— Acme Labs Docs")
+    else:
+        lines.append("No extra bundle was attached.")
+    return "\n".join(lines) + "\n"
+
+
+def _demo_judge_text(model: str, prompt: str) -> str:
+    output = prompt.split("AI's response:", 1)[1] if "AI's response:" in prompt else prompt
+    base = 5 + (_demo_seed(model, prompt) % 3)
+    if "bundled Acme Labs notes" in output or "— Acme Labs Docs" in output:
+        score = min(10, base + 2)
+        reasoning = "Demo judge: context bundle improved specificity and house style."
+    else:
+        score = base
+        reasoning = "Demo judge: bare response was generic but on-topic."
+    return json.dumps({"score": score, "reasoning": reasoning})
+
+
 CALLERS = {
     "anthropic": call_anthropic,
     "xai": call_xai,
@@ -379,4 +425,5 @@ CALLERS = {
     "codex": call_codex_cli,
     "cursor": call_cursor_cli,
     "gemini": call_gemini_cli,
+    "demo": call_demo,
 }
