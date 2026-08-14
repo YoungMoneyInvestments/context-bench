@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/logo.svg" width="96" height="96" alt="context-bench: a scored delta on a bench" />
+  <img src="docs/assets/logo.svg" width="80" height="80" alt="context-bench: grades your notes — keep, bloat, or remove" />
 </p>
 
 # context-bench
