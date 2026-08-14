@@ -9,7 +9,14 @@ from __future__ import annotations
 
 import os
 import subprocess
+import tempfile
 import time
+
+# Run claude -p from a neutral scratch cwd, not this repo: inside the repo, ambient
+# hooks/CLAUDE.md surface this repo's own git status ("uncommitted change in profiles.py...")
+# and the model answers *that* instead of doing the Case. Reused across calls (cheap, no
+# per-run mkdtemp cost) since it's never written to.
+_NEUTRAL_CWD = tempfile.mkdtemp(prefix="contextbench-cwd-")
 
 
 def call_cli_harness(model: str, system: str, prompt: str) -> tuple[str, int, int]:
@@ -31,7 +38,9 @@ def call_cli_harness(model: str, system: str, prompt: str) -> tuple[str, int, in
         cmd.extend(["--model", "claude-opus-5"])
 
     try:
-        res = subprocess.run(cmd, capture_output=True, text=True, timeout=60, check=True)
+        res = subprocess.run(
+            cmd, capture_output=True, text=True, timeout=180, check=True, cwd=_NEUTRAL_CWD
+        )
         text = res.stdout.strip()
         # Rough token estimation for local CLI execution
         in_tok = len(full_prompt.split()) * 2
