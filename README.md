@@ -48,10 +48,10 @@ Read down a column. If a stronger model is worse on `hooks`, that is the pile to
 Writes `results/leaderboard_<ts>.md`. The leaderboard opens with a class matrix, then scores, Elo, and CIs. Deltas are paired by case. If any Case × Profile cell fails, the process exits 2 and does not print Helps / No lift / Hurts.
 
 <p align="center">
-  <img src="docs/assets/loop.svg" alt="Shape of a class × model table: each kind of context scored alone against the same model with nothing extra. Newer models need this less means the stronger model got less benefit." width="100%" />
+  <img src="docs/assets/loop.svg" alt="Same model twice: with extra context and without. Helps means it scored better, No lift means almost the same, Hurts means it scored worse." width="100%" />
 </p>
 
-That picture is the **shape** of the output, not a scored run. Your table is the one in `results/`.
+That picture is how to read the table, not a scored run. Your real table is the one in `results/dashboard.html`.
 
 <p align="center">
   <a href="https://youngmoneyinvestments.github.io/context-bench/watch.html">
