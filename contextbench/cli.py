@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -18,7 +19,7 @@ def main() -> None:
     p = argparse.ArgumentParser(prog="contextbench")
     p.add_argument("--cases-dir", default="cases")
     p.add_argument("--out-dir", default="results")
-    p.add_argument("--judge-provider", default="anthropic")
+    p.add_argument("--judge-provider", default=None)
     p.add_argument("--judge-model", default="claude-opus-5")
     p.add_argument("--no-judge", action="store_true", help="run only, skip scoring")
     args = p.parse_args()
@@ -27,6 +28,10 @@ def main() -> None:
     if not cases:
         raise SystemExit(f"no cases found in {args.cases_dir}")
     profiles = default_profiles()
+
+    judge_provider = args.judge_provider
+    if not judge_provider:
+        judge_provider = "anthropic" if os.environ.get("ANTHROPIC_API_KEY") else "cli"
 
     runs = run_all(cases, profiles)
     ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -40,7 +45,7 @@ def main() -> None:
         return
 
     cases_by_id = {c.id: c for c in cases}
-    judgments = judge_all(runs, cases_by_id, args.judge_provider, args.judge_model)
+    judgments = judge_all(runs, cases_by_id, judge_provider, args.judge_model)
     judged_path = out_dir / f"judged_{ts}.json"
     judged_path.write_text(json.dumps(judgments_to_dicts(judgments), indent=2))
     print(f"[cli] wrote {judged_path}")

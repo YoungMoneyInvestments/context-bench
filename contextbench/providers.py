@@ -1,17 +1,49 @@
 """Thin per-provider callers. Returns (text, input_tokens, output_tokens).
 
-Supports direct SDK calls (Anthropic, OpenAI, xAI) as well as OmniRoute proxy routing
-for local OAuth subscription pools.
+Supports:
+1. Local CLI harness execution (`claude -p`) using your active local OAuth subscriptions.
+2. Direct API keys (`anthropic`, `openai`, `xai`) if configured.
+3. OmniRoute proxy fallback if explicitly configured.
 """
 from __future__ import annotations
 
 import os
+import subprocess
+import time
+
+
+def call_cli_harness(model: str, system: str, prompt: str) -> tuple[str, int, int]:
+    """Execute via the local `claude -p` CLI binary using your active local subscription.
+    Handles bare vs context-bundle prompts naturally.
+    """
+    full_prompt = prompt
+    if system:
+        full_prompt = f"System Instructions:\n{system}\n\nTask:\n{prompt}"
+
+    cmd = ["claude", "-p", full_prompt]
+
+    # Map model flags if needed
+    if "sonnet" in model:
+        cmd.extend(["--model", "claude-sonnet-5"])
+    elif "haiku" in model:
+        cmd.extend(["--model", "claude-haiku-4-5-20251001"])
+    elif "opus" in model:
+        cmd.extend(["--model", "claude-opus-5"])
+
+    try:
+        res = subprocess.run(cmd, capture_output=True, text=True, timeout=60, check=True)
+        text = res.stdout.strip()
+        # Rough token estimation for local CLI execution
+        in_tok = len(full_prompt.split()) * 2
+        out_tok = len(text.split()) * 2
+        return text, in_tok, out_tok
+    except Exception as e:
+        raise RuntimeError(f"CLI harness execution failed: {e}") from e
 
 
 def call_omniroute(model: str, system: str, prompt: str) -> tuple[str, int, int]:
-    """Route requests through local OmniRoute server (port 18800) using local OAuth subscriptions."""
-    import urllib.request
     import json
+    import urllib.request
 
     omni_url = os.environ.get("OMNIROUTE_URL", "http://127.0.0.1:18800/v1/chat/completions")
     omni_key = os.environ.get("OMNIROUTE_API_KEY", "sk-omniroute-local")
@@ -50,11 +82,11 @@ def call_omniroute(model: str, system: str, prompt: str) -> tuple[str, int, int]
 
 
 def call_anthropic(model: str, system: str, prompt: str) -> tuple[str, int, int]:
-    import anthropic
-
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
-        return call_omniroute(model, system, prompt)
+        return call_cli_harness(model, system, prompt)
+
+    import anthropic
 
     client = anthropic.Anthropic(api_key=api_key)
     resp = client.messages.create(
@@ -70,7 +102,7 @@ def call_anthropic(model: str, system: str, prompt: str) -> tuple[str, int, int]
 def call_xai(model: str, system: str, prompt: str) -> tuple[str, int, int]:
     api_key = os.environ.get("XAI_API_KEY")
     if not api_key:
-        return call_omniroute(f"xai/{model}", system, prompt)
+        return call_cli_harness(model, system, prompt)
 
     return _call_openai_compatible(
         base_url="https://api.x.ai/v1",
@@ -84,7 +116,7 @@ def call_xai(model: str, system: str, prompt: str) -> tuple[str, int, int]:
 def call_openai(model: str, system: str, prompt: str) -> tuple[str, int, int]:
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
-        return call_omniroute(model, system, prompt)
+        return call_cli_harness(model, system, prompt)
 
     return _call_openai_compatible(
         base_url="https://api.openai.com/v1",
@@ -118,4 +150,5 @@ CALLERS = {
     "xai": call_xai,
     "openai": call_openai,
     "omniroute": call_omniroute,
+    "cli": call_cli_harness,
 }
