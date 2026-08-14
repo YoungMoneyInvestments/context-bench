@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/assets/logo.svg" width="96" height="96" alt="context-bench: a scored delta on a bench" />
+</p>
+
 # context-bench
 
 Score whether a `CLAUDE.md` or skill bundle actually helps a model — or just spends tokens.
@@ -57,6 +61,8 @@ python3 -m contextbench.cli --context-dir ~/.claude/skills/caveman --models opus
 
 Writes `results/runs_<ts>.json`, `results/judged_<ts>.json`, and `results/leaderboard_<ts>.md`.
 
+The leaderboard includes mean scores, an **Arena-style Elo** section (pairwise wins from per-case score comparisons), and bootstrap confidence intervals on ablation deltas when skill profiles are present. Elo numbers are **within-run only** — use them to rank profiles in that run, not to compare across machines or sessions (same idea as Chatbot Arena's relative ranking).
+
 ### Flags
 
 | Flag | What it does |
@@ -70,7 +76,7 @@ Writes `results/runs_<ts>.json`, `results/judged_<ts>.json`, and `results/leader
 
 ## Read the numbers honestly
 
-The judge is a model call, not ground truth. Read a few `results/judged_*.json` reasons before trusting a delta. Six Cases is a smoke bench, not a statistically powered one. If a Profile swings on 1–2 Cases, that is noise.
+The judge is a model call, not ground truth. Read a few `results/judged_*.json` reasons before trusting a delta. Ten Cases is a smoke bench, not a statistically powered one. If a Profile swings on 1–2 Cases, that is noise.
 
 **SKILL.md files are not invoked as Claude Code skills.** v1 concatenates markdown into a system prompt. That is the right test for a `CLAUDE.md`. It is the wrong test for a skill that should be called by name. `--wrap fair` stops Opus/Sonnet from treating the dump as a jailbreak ([ADR 0004](./docs/adr/0004-fair-cli-wrapping.md)).
 

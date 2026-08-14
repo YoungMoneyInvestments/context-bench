@@ -1,6 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="context-bench">
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 512 512" role="img" aria-label="context-bench">
   <rect width="512" height="512" rx="112" fill="#0b0d10"/>
-  <!-- even-weight Δ (incenter offset ~48) on a cream bench, 16px gap -->
   <path d="M256 116 L404 376 H108 Z" fill="#e8a54b"/>
   <path d="M256 213 L321 328 H191 Z" fill="#0b0d10"/>
   <rect x="108" y="392" width="296" height="40" rx="5" fill="#f4f0e6"/>

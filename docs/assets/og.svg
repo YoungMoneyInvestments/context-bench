@@ -13,4 +13,13 @@
     <text x="602" y="436" text-anchor="middle" fill="#d94b3d">REMOVE</text>
   </g>
   <text x="72" y="540" fill="#6b7380" font-family="ui-sans-serif, system-ui, sans-serif" font-size="20">github.com/YoungMoneyInvestments/context-bench</text>
+  <g transform="translate(980,160)">
+    <rect width="220" height="220" rx="48" fill="#15181e"/>
+    <g transform="scale(0.4296875)">
+      <path d="M256 116 L404 376 H108 Z" fill="#e8a54b"/>
+      <path d="M256 213 L321 328 H191 Z" fill="#15181e"/>
+      <rect x="108" y="392" width="296" height="40" rx="5" fill="#f4f0e6"/>
+    </g>
+  </g>
 </svg>
+
