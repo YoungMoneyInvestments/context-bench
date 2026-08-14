@@ -32,18 +32,30 @@ future work, not a corner cut silently. See [issues](../../issues) for status.
 
 ## Quickstart
 
+No API key needed for Claude Profiles or the judge — they run through your local `claude` CLI on
+your existing OAuth subscription. Just have `claude` installed and logged in (`claude /login`).
+
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e .
 
-export ANTHROPIC_API_KEY=...   # required — used for Claude Profiles and as the default judge
-export XAI_API_KEY=...         # optional — enables Grok Profiles
+export XAI_API_KEY=...   # optional — enables Grok Profiles; everything else defaults to your OAuth session
 
 python3 -m contextbench.cli
 ```
 
 Results land in `results/runs_<ts>.json`, `results/judged_<ts>.json`, and a rendered
 `results/leaderboard_<ts>.md`.
+
+### Known limitation: `bare` isn't zero-context
+
+Running through the `claude` CLI (so it can use your OAuth subscription instead of an API key)
+means your own `~/.claude/CLAUDE.md`/skills/hooks load on *every* Profile, `bare` included — there
+is no flag that disables that without also disabling OAuth (verified; see
+[ADR 0003](./docs/adr/0003-bare-is-relative-to-ambient-config-under-oauth.md)). That's constant
+across every Profile in a run though, so it doesn't bias the `bare` vs. `+context` Delta the
+Leaderboard is built on — it just means the Leaderboard is *your* personalized ablation report,
+not a universal score comparable across different people's machines.
 
 ## Testing your own CLAUDE.md/skills, not the demo bundle
 
