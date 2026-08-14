@@ -2,8 +2,12 @@
 __pycache__/
 *.pyc
 .env
-results/*.json
-results/*.md
+.env.*
+*.pem
+credentials.json
+
+# Local run artifacts — never publish judged outputs / dashboards
+results/*
 !results/.gitkeep
 
 .omc/

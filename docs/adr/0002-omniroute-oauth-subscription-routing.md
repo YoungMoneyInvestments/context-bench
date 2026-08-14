@@ -1,24 +1,23 @@
-# ADR 0002: Testing via OmniRoute OAuth Subscriptions & Harness Realities
+# ADR 0002: Subscription CLI / OAuth routing vs API keys
 
 ## Status
-Accepted — **Superseded in practice by direct CLI harness (`claude` / `grok` / `codex` OAuth adapters); OmniRoute optional/fallback only.**
+Accepted — **Superseded in practice by direct CLI harness (`claude` / `grok` / `codex` / `cursor-agent` / `gmi` OAuth adapters); OmniRoute optional/fallback only.**
 
 ## Context
-1. **User Goal**: The user (Cameron) explicitly wants to run model comparisons using his existing **subscriptions / OAuth accounts** (Claude Team/Pro OAuth, Grok/xAI OAuth, Codex/Cursor/Antigravity OAuth pools stored in OmniRoute), **NOT API key pay-per-token credits**.
-2. **Goal of the Benchmark**: Benchmark how a user's *local environment* (their active `CLAUDE.md`, custom skills, hooks, and MCP tools) affects output quality on specific tasks compared to a "bare" baseline without those instructions/tools.
+1. **Goal**: Run model comparisons on existing **subscriptions / OAuth CLI sessions**, not pay-per-token API keys.
+2. **Goal of the Benchmark**: Measure how a user's *local environment* (active `CLAUDE.md`, skills, hooks, MCP tools) changes output quality vs a bare baseline.
 3. **The Architectural Conflict**:
-   - Direct provider API calls (`anthropic.Anthropic()`, `openai.OpenAI()`) require paid API keys (`sk-...`) per token. They bypass all local CLI hooks, system prompts, skills, and OAuth session tokens.
-   - Calling raw LLM APIs with system prompts tests static prompt engineering, but it does **not** exercise live CLI harness behaviors (such as dynamic tool calls, skill dispatches, or hook overrides).
-   - OmniRoute holds Cameron's active pool of OAuth subscriptions (`claude`, `grok-cli`, `xai-oauth`, `codex`, `antigravity`, `agy`, etc.) so requests run under subscription entitlement rather than direct API key billing.
+   - Direct provider API calls (`anthropic.Anthropic()`, `openai.OpenAI()`) require paid API keys (`sk-...`) per token. They bypass local CLI hooks, system prompts, skills, and OAuth session tokens.
+   - Calling raw LLM APIs with system prompts tests static prompt engineering, but does **not** exercise live CLI harness behaviors (tool calls, skill dispatch, hooks).
+   - Local CLIs already hold authenticated subscription sessions; routing through them matches real usage without shipping keys into the repo.
 
 ## Decision
-1. **Add OmniRoute as the Default Provider Adapter** in `context-bench`.
-   - Instead of requiring direct `ANTHROPIC_API_KEY` or `XAI_API_KEY` environment variables, `context-bench` will route requests through OmniRoute MCP / local proxy endpoints.
-   - This routes requests through Cameron's authenticated OAuth subscription pools (`claude`, `grok-cli`, `xai-oauth`, etc.).
-2. **Acknowledge the Layer Distinction**:
-   - **Layer A (Prompt/Context Benchmarking via OmniRoute)**: Tests how adding markdown context/instructions to a model request via OmniRoute OAuth changes output quality vs. bare prompts.
-   - **Layer B (Live Harness Benchmarking)**: To test interactive CLI skills/hooks/MCPs (e.g. Claude Code or Hermes execution), `context-bench` can optionally invoke the CLI binary (`claude --print` or subagent runner) directly in a temporary workspace with or without `~/.claude/CLAUDE.md` and `~/.claude/skills/`.
+1. **Prefer per-provider CLI adapters** in `context-bench` (`claude -p`, `grok`, `codex exec`, `cursor-agent`, `gmi`).
+2. **OmniRoute remains optional** as an explicit `--provider omniroute` fallback, not the default path.
+3. **Acknowledge the Layer Distinction**:
+   - **Layer A (Prompt/Context Benchmarking)**: Extra markdown context via system/user wrapping on a CLI/API call.
+   - **Layer B (Live Harness Benchmarking)**: Real skill slash-invoke (`claude -p /skillname`) and similar harness loops.
 
 ## Consequences
-- **No API key spend needed**: Uses existing subscription logins stored in OmniRoute.
-- **True reflection of actual usage**: Matches how Cameron actually codes (routing through OmniRoute and OAuth models).
+- No API keys need to live in the repo or CI secrets for the default path.
+- Absolute scores stay operator-local under OAuth ambient config (see ADR 0003).
