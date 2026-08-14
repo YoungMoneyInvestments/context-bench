@@ -1,21 +1,23 @@
 # context-bench
 
-Score whether your `CLAUDE.md`, skills, hooks, and agents still help — or which class newer models have outgrown.
+Score whether your skills, hooks, and memory still help — on Claude, Codex, Grok, or any model with a context pile. Then see which class newer models have outgrown.
 
 ```bash
 pip install -e .
-python3 -m contextbench.cli --context-dir ~/.claude
+python3 -m contextbench.cli --context-dir ~/.claude   # Claude Code
+python3 -m contextbench.cli --context-dir ~/.codex    # Codex
+python3 -m contextbench.cli --context-dir ~/.grok     # Grok
 ```
 
-Pointed at a Claude home, the bench **splits the pile** (`CLAUDE.md` / `skills` / `hooks` / `agents`), scores each class **alone** against bare, and prints a model × class table. Read down a column. If Opus is worse than Haiku on `hooks`, that is the class to delete when you upgrade.
+Point it at whatever directory that provider uses for skills, hooks, or memory — Claude Code, Codex, Grok, or any other LLM tool with a context/memory pile. On a Claude-style home it **splits the pile** (`CLAUDE.md` / `skills` / `hooks` / `agents`), scores each class **alone** against bare, and prints a model × class table. Same idea on Codex or Grok: bare versus your skills and hooks. Read down a column. If a stronger model is worse on `hooks`, that is the class to delete when you upgrade.
 
 <p align="center">
   <a href="https://github.com/YoungMoneyInvestments/context-bench/blob/master/docs/assets/context-bench.mp4">
-    <img src="docs/assets/film-poster.jpg" alt="Watch the 48s film: Boris Cherny, then the bench" width="100%" />
+    <img src="docs/assets/film-poster.jpg" alt="Watch the 50s film: Boris Cherny, then skills and hooks on Claude, Codex, and Grok" width="100%" />
   </a>
 </p>
 
-[48s film (play on GitHub)](https://github.com/YoungMoneyInvestments/context-bench/blob/master/docs/assets/context-bench.mp4) · [raw mp4](https://github.com/YoungMoneyInvestments/context-bench/raw/master/docs/assets/context-bench.mp4) · [9:16](https://github.com/YoungMoneyInvestments/context-bench/blob/master/docs/assets/context-bench-9x16.mp4)
+[50s film (play on GitHub)](https://github.com/YoungMoneyInvestments/context-bench/blob/master/docs/assets/context-bench.mp4) · [raw mp4](https://github.com/YoungMoneyInvestments/context-bench/raw/master/docs/assets/context-bench.mp4) · [9:16](https://github.com/YoungMoneyInvestments/context-bench/blob/master/docs/assets/context-bench-9x16.mp4)
 
 <p align="center">
   <img src="docs/assets/loop.svg" alt="Each class of your Claude home is scored alone against bare, across models. Fading means stronger models get less lift." width="100%" />
@@ -55,8 +57,12 @@ pip install -e .
 # Synthetic demo first
 python3 -m contextbench.cli --smoke
 
-# The run that matters — auto-splits a Claude home
+# The run that matters — auto-splits a Claude-style home
 python3 -m contextbench.cli --context-dir ~/.claude
+
+# Same bench against Codex or Grok (or any other skills/hooks/memory dir)
+python3 -m contextbench.cli --context-dir ~/.codex
+python3 -m contextbench.cli --context-dir ~/.grok
 
 # One class family, one model
 python3 -m contextbench.cli --context-dir ~/.claude --split families --models opus
@@ -81,8 +87,8 @@ The leaderboard leads with the class matrix, then mean scores, Arena-style Elo (
 | `--split families` | Skills grouped by shared name prefix. |
 | `--split skills` | One profile per skill directory. |
 | `--split off` | Whole directory as one blob. |
-| `--wrap fair` | Default. Case is the user message; notes are optional system context. |
-| `--wrap system` | Notes as a raw system prompt. |
+| `--wrap fair` | Default. Case is the user message; skills and hooks are optional system context. |
+| `--wrap system` | Skills and hooks as a raw system prompt. |
 | `--wrap raw` | Old `"System Instructions:"` user-turn wrap ([issue #1](https://github.com/YoungMoneyInvestments/context-bench/issues/1)). |
 | `--models opus,sonnet,haiku` | Or `provider:model-id`. |
 | `--smoke` | First Case × first model. Use this before a 6×3×N burn. |

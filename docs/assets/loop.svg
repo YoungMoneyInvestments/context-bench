@@ -3,7 +3,7 @@
   <g font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif">
     <text x="40" y="42" fill="#e8a54b" font-size="16" letter-spacing="3">WHAT THE BENCH ACTUALLY ANSWERS</text>
     <text x="40" y="82" fill="#f4f0e6" font-size="28" font-weight="700">Which class still earns tokens — and which models have outgrown it</text>
-    <text x="40" y="116" fill="#9aa3ad" font-size="16">~/.claude is split. Each class runs alone against bare. Read down a column.</text>
+    <text x="40" y="116" fill="#9aa3ad" font-size="16">Claude, Codex, Grok — any skills and hooks pile. Each class runs alone against bare.</text>
 
     <!-- header -->
     <text x="280" y="168" text-anchor="middle" fill="#9aa3ad" font-size="15">Haiku</text>
