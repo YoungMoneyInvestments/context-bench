@@ -1,7 +1,7 @@
 [project]
 name = "contextbench"
 version = "0.1.0"
-description = "Benchmarks whether your CLAUDE.md/skills/system prompt actually helps, per-model."
+description = "Score whether a CLAUDE.md or skill bundle actually helps a model — or just gets in the way."
 requires-python = ">=3.10"
 dependencies = [
     "anthropic>=0.40",

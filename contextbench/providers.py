@@ -10,7 +10,6 @@ from __future__ import annotations
 import os
 import subprocess
 import tempfile
-import time
 
 # Run claude -p from a neutral scratch cwd, not this repo: inside the repo, ambient
 # hooks/CLAUDE.md surface this repo's own git status ("uncommitted change in profiles.py...")
@@ -19,35 +18,60 @@ import time
 _NEUTRAL_CWD = tempfile.mkdtemp(prefix="contextbench-cwd-")
 
 
-def call_cli_harness(model: str, system: str, prompt: str) -> tuple[str, int, int]:
-    """Execute via the local `claude -p` CLI binary using your active local subscription.
-    Handles bare vs context-bundle prompts naturally.
-    """
-    full_prompt = prompt
-    if system:
-        full_prompt = f"System Instructions:\n{system}\n\nTask:\n{prompt}"
-
-    cmd = ["claude", "-p", full_prompt]
-
-    # Map model flags if needed
+def _cli_model_flag(model: str) -> list[str]:
     if "sonnet" in model:
-        cmd.extend(["--model", "claude-sonnet-5"])
-    elif "haiku" in model:
-        cmd.extend(["--model", "claude-haiku-4-5-20251001"])
-    elif "opus" in model:
-        cmd.extend(["--model", "claude-opus-5"])
+        return ["--model", "claude-sonnet-5"]
+    if "haiku" in model:
+        return ["--model", "claude-haiku-4-5-20251001"]
+    if "opus" in model:
+        return ["--model", "claude-opus-5"]
+    return []
+
+
+def call_cli_harness(model: str, system: str, prompt: str) -> tuple[str, int, int]:
+    """Execute via the local `claude -p` CLI using the active OAuth subscription.
+
+    Context notes go through `--system-prompt-file` (real system role), not concatenated
+    into the user turn as "System Instructions:". That old wrapping made Opus/Sonnet
+    treat SKILL.md dumps as injection or help-text (issue #1).
+    """
+    sys_path = None
+    cmd = ["claude", "-p", prompt, *_cli_model_flag(model)]
+    if system:
+        fd, sys_path = tempfile.mkstemp(prefix="contextbench-sys-", suffix=".txt")
+        with os.fdopen(fd, "w") as handle:
+            handle.write(system)
+        cmd.extend(["--system-prompt-file", sys_path])
 
     try:
         res = subprocess.run(
             cmd, capture_output=True, text=True, timeout=180, check=True, cwd=_NEUTRAL_CWD
         )
         text = res.stdout.strip()
-        # Rough token estimation for local CLI execution
-        in_tok = len(full_prompt.split()) * 2
+        in_tok = (len(prompt.split()) + len(system.split())) * 2
         out_tok = len(text.split()) * 2
         return text, in_tok, out_tok
+    except subprocess.CalledProcessError as e:
+        stderr = (e.stderr or "") + (e.stdout or "")
+        if sys_path and "system-prompt-file" in stderr.lower():
+            # Older CLI builds only have --system-prompt. Fall back; ARG_MAX is the risk.
+            cmd = ["claude", "-p", prompt, "--system-prompt", system, *_cli_model_flag(model)]
+            res = subprocess.run(
+                cmd, capture_output=True, text=True, timeout=180, check=True, cwd=_NEUTRAL_CWD
+            )
+            text = res.stdout.strip()
+            in_tok = (len(prompt.split()) + len(system.split())) * 2
+            out_tok = len(text.split()) * 2
+            return text, in_tok, out_tok
+        raise RuntimeError(f"CLI harness execution failed: {e}") from e
     except Exception as e:
         raise RuntimeError(f"CLI harness execution failed: {e}") from e
+    finally:
+        if sys_path:
+            try:
+                os.unlink(sys_path)
+            except OSError:
+                pass
 
 
 def call_omniroute(model: str, system: str, prompt: str) -> tuple[str, int, int]:
