@@ -35,11 +35,11 @@ def _parse_md_tables(md: str) -> list[tuple[str, list[str], list[list[str]]]]:
 
 def _cell_class(text: str) -> str:
     t = text.upper()
-    if "KEEP" in t or "✅" in text:
+    if "HELPS" in t or "KEEP" in t:
         return "keep"
-    if "REMOVE" in t or "❌" in text:
+    if "HURTS" in t or "REMOVE" in t:
         return "remove"
-    if "PROMPT_BLOAT" in t or "🧹" in text:
+    if "NO LIFT" in t or "PROMPT_BLOAT" in t or "🧹" in text:
         return "bloat"
     if text.startswith("+"):
         return "pos"
@@ -67,7 +67,9 @@ def render_html(md: str, *, title: str, source: str) -> str:
         "  color: var(--ink); min-height: 100vh; }",
         "header { padding: 28px 32px 8px; }",
         "h1 { margin:0 0 6px; font-size: 28px; letter-spacing: -0.02em; }",
-        "header p { margin:0; color: var(--muted); }",
+        "header p { margin:0 0 8px; color: var(--muted); }",
+        ".legend { margin:14px 0 0; padding:0; list-style:none; display:grid; gap:6px; max-width: 72ch; }",
+        ".legend li { color: var(--muted); }",
         "main { padding: 16px 32px 48px; display:grid; gap:22px; }",
         "section { background: color-mix(in srgb, var(--panel) 92%, black);",
         "  border:1px solid var(--line); border-radius: 14px; overflow:hidden; }",
@@ -94,6 +96,12 @@ def render_html(md: str, *, title: str, source: str) -> str:
         "<header>",
         f"<h1>{html.escape(title)}</h1>",
         f"<p>Source: <code>{html.escape(source)}</code></p>",
+        "<p>Each row is the same model twice: once with extra context, once without.</p>",
+        '<ul class="legend">',
+        '<li><strong class="keep">Helps</strong> — scored clearly better with the extra context. Leave it.</li>',
+        '<li><strong class="bloat">No lift</strong> — almost the same either way. You are paying tokens for little.</li>',
+        '<li><strong class="remove">Hurts</strong> — scored worse with it. Take it out after reading a couple judged reasons.</li>',
+        "</ul>",
         "</header>",
         "<main>",
     ]

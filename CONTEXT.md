@@ -65,6 +65,13 @@ A kind of context inside a Claude home, scored *alone* against bare: `claude.md`
 pile newer models are outgrowing.
 _Avoid_: category (that's a Case field), bundle (a Class is a *slice* of a bundle)
 
+**Verdict**:
+What extra context did to the score vs the same Model with nothing extra attached.
+**Helps** (change ≥ +1.5): leave it. **No lift** (in between): almost the same; you are paying
+tokens for little. **Hurts** (change ≤ −1.0): take it out, after reading a couple of Judgments —
+a big drop can be wrapping, not the content.
+_Avoid_: KEEP, PROMPT_BLOAT, REMOVE, recommendation, call
+
 **Leaderboard**:
 The mean Judgment score per Profile, aggregated across all Cases in a run, rendered as a markdown
 table. This is the only artifact meant for humans to read directly — Runs and Judgments are the

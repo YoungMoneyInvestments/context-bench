@@ -4,7 +4,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from contextbench.ablation import analyze_deltas
+from contextbench.ablation import VERDICT_HELPS, VERDICT_HURTS, VERDICT_NO_LIFT, analyze_deltas, verdict_for_delta
+from contextbench.dashboard import _cell_class
 from contextbench.leaderboard import aggregate, to_markdown
 from contextbench.models import AblationDelta, Judgment, Profile
 
@@ -23,7 +24,7 @@ def test_aggregate_ranks_higher_mean_first():
     assert rows[1][1] == 4.0
 
 
-def test_analyze_deltas_recommends_remove_on_hobbling():
+def test_analyze_deltas_marks_hurts_when_context_lowers_score():
     profiles = [
         Profile("claude-opus-5+bare", "anthropic", "claude-opus-5", None),
         Profile("claude-opus-5+example", "anthropic", "claude-opus-5", "examples/context"),
@@ -36,23 +37,38 @@ def test_analyze_deltas_recommends_remove_on_hobbling():
     ]
     deltas = analyze_deltas(judgments, profiles)
     assert len(deltas) == 1
-    assert deltas[0].recommendation == "REMOVE"
+    assert deltas[0].recommendation == VERDICT_HURTS
     assert deltas[0].delta == -3.0
+
+
+def test_verdict_for_delta_uses_plain_language():
+    assert verdict_for_delta(1.5) == VERDICT_HELPS
+    assert verdict_for_delta(0.2) == VERDICT_NO_LIFT
+    assert verdict_for_delta(-1.0) == VERDICT_HURTS
+
+
+def test_dashboard_colors_plain_verdicts():
+    assert _cell_class("Helps") == "keep"
+    assert _cell_class("No lift") == "bloat"
+    assert _cell_class("Hurts") == "remove"
 
 
 def test_to_markdown_includes_ablation_matrix():
     judgments = [Judgment("case1", "profileA", 7, "fine", "judge")]
     deltas = [
-        AblationDelta("claude-opus-5", "example", 9.0, 6.0, -3.0, "REMOVE")
+        AblationDelta("claude-opus-5", "example", 9.0, 6.0, -3.0, VERDICT_HURTS)
     ]
     md = to_markdown(judgments, deltas)
     assert "profileA" in md
-    assert "Skill Ablation & Recommendation Matrix" in md
-    assert "REMOVE" in md
+    assert "Same model, with vs without the extra context" in md
+    assert VERDICT_HURTS in md
+    assert "KEEP" not in md
+    assert "PROMPT_BLOAT" not in md
+    assert "REMOVE" not in md
 
 
 if __name__ == "__main__":
     test_aggregate_ranks_higher_mean_first()
-    test_analyze_deltas_recommends_remove_on_hobbling()
+    test_analyze_deltas_marks_hurts_when_context_lowers_score()
     test_to_markdown_includes_ablation_matrix()
     print("ok")

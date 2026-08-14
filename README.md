@@ -2,7 +2,7 @@
 
 Find which **skills** and **hooks** still help — and which newer models have outgrown.
 
-Works on Claude Code, Codex, Grok, or any LLM tool with a skills / hooks / memory directory. It splits that pile, scores each class **alone** against bare, and prints KEEP / PROMPT_BLOAT / REMOVE.
+Works on Claude Code, Codex, Grok, or any LLM tool with a skills / hooks / memory directory. It splits that pile, scores each kind of context **alone** against the same model with nothing extra, and says whether it **Helps**, does nothing (**No lift**), or **Hurts**.
 
 **No API key to look around.** `--demo` is fully offline (in-process mocks, no OAuth). Real runs use your local `claude` CLI (`claude /login`). Optional: `XAI_API_KEY` for Grok.
 
@@ -36,19 +36,19 @@ python3 -m contextbench.cli --context-dir ~/.grok
 
 On a Claude-style home it auto-splits `CLAUDE.md` / `skills` / `hooks` / `agents`. Claude arms run with `--safe-mode`, so ambient `~/.claude` is not in the prompt. Each class is injected once on that isolated base. Hooks that are only code are inventoried, not executed. Slash-invoke (`--harness skill`) cannot use `--safe-mode` because that flag disables skills.
 
-Read down a column. If a stronger model is worse on `hooks`, that is the class to delete when you upgrade.
+Read down a column. If a stronger model is worse on `hooks`, that is the pile to delete when you upgrade.
 
-| Call | When |
+| What it did | Meaning |
 |---|---|
-| **KEEP** | Δ ≥ +1.5 — that class earns its tokens |
-| **PROMPT_BLOAT** | in between — barely moved the score |
-| **REMOVE** | Δ ≤ −1.0 — the model got worse with it |
-| **fading** | stronger models get less lift than weaker ones |
+| **Helps** | The model scored clearly better with this attached. Leave it. |
+| **No lift** | Almost the same with or without it. You are paying tokens for little. |
+| **Hurts** | The model scored worse with this attached. Take it out. |
+| **Newer models need this less** | The stronger model got less benefit than the weaker one. |
 
-Writes `results/leaderboard_<ts>.md`. The leaderboard opens with a class matrix, then scores, Elo, and CIs. Deltas are paired by case. If any Case × Profile cell fails, the process exits 2 and does not print KEEP/REMOVE.
+Writes `results/leaderboard_<ts>.md`. The leaderboard opens with a class matrix, then scores, Elo, and CIs. Deltas are paired by case. If any Case × Profile cell fails, the process exits 2 and does not print Helps / No lift / Hurts.
 
 <p align="center">
-  <img src="docs/assets/loop.svg" alt="Shape of a class × model table: each class scored alone against bare. Fading means stronger models get less lift." width="100%" />
+  <img src="docs/assets/loop.svg" alt="Shape of a class × model table: each kind of context scored alone against the same model with nothing extra. Newer models need this less means the stronger model got less benefit." width="100%" />
 </p>
 
 That picture is the **shape** of the output, not a scored run. Your table is the one in `results/`.
@@ -127,7 +127,7 @@ rubric:
 
 Anthropic deleted ~80% of Claude Code's own system prompt when Opus 5 shipped. The model got better. Boris Cherny's follow-up: do the same thing to *your* stack every six months, then add back only what you watch fail. [Nate Herk's video](https://youtu.be/XNQBCRcwXV4) is what made that advice circulate.
 
-A whole-home REMOVE is not actionable. "hooks are fading on Opus, skills still pay on Haiku" is.
+A whole-home Hurts is not actionable. "hooks hurt on Opus, skills still help on Haiku" is.
 
 Source clips in the film: [Boris at YC Startup School](https://www.youtube.com/watch?v=qyPCVqFUyDo) · [Nate Herk](https://youtu.be/XNQBCRcwXV4). Short attributed excerpts; the rest is this project's explainer.
 
