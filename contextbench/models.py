@@ -23,6 +23,7 @@ class Profile:
     extra_notes: str = ""
     class_id: str = ""
     kind: str = ""
+    skill_name: str = ""  # non-empty => slash-invoke via claude -p /{skill_name}
 
 
 @dataclass

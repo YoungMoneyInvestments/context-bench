@@ -17,7 +17,7 @@ try:
 except ImportError:  # Elo shipped in a parallel change; class split must run without it
     bootstrap_delta_ci = None
     elo_ratings = None
-from contextbench.profiles import default_profiles, label_for_context_dir, resolve_models
+from contextbench.profiles import HARNESS_MODES, default_profiles, label_for_context_dir, resolve_models
 from contextbench.runner import run_all, runs_to_dicts
 from contextbench.judge import judge_all, judgments_to_dicts
 
@@ -62,6 +62,13 @@ def main() -> None:
         default=None,
         metavar="PATH",
         help="Context Bundle to test against bare. Repeatable. Default: examples/context",
+    )
+    p.add_argument(
+        "--harness",
+        choices=HARNESS_MODES,
+        default="auto",
+        help="auto=skill dirs use slash /skill invoke; notes=always system-prompt wrap; "
+        "skill=require --context-dir to be skill dirs with SKILL.md.",
     )
     p.add_argument(
         "--wrap",
@@ -113,25 +120,34 @@ def main() -> None:
         cases = cases[:1]
         models = models[:1]
 
-    profiles = default_profiles(
-        context_dirs=context_dirs,
-        models=models,
-        provider=args.provider,
-        include_bare=not args.no_bare,
-    )
+    try:
+        profiles = default_profiles(
+            context_dirs=context_dirs,
+            models=models,
+            provider=args.provider,
+            include_bare=not args.no_bare,
+            harness=args.harness,
+        )
+    except ValueError as e:
+        raise SystemExit(str(e)) from e
     if not profiles:
         raise SystemExit("no profiles to run (did you pass --no-bare with no --context-dir?)")
 
-    skill_hits = []
-    for profile in profiles:
-        for rel in bundle_skill_files(profile.context_dir):
-            skill_hits.append(f"{profile.id}:{rel}")
-    if skill_hits:
+    skill_profiles = [p for p in profiles if p.skill_name]
+    notes_only_skill_hits = []
+    if args.harness == "notes":
+        for profile in profiles:
+            for rel in bundle_skill_files(profile.context_dir):
+                notes_only_skill_hits.append(f"{profile.id}:{rel}")
+    if notes_only_skill_hits:
         print(
-            "[cli] note: this run includes SKILL.md files. fair wrap stops them from looking "
-            "like a jailbreak, but it is still not a Claude Code skill-invocation test. "
-            "See docs/adr/0004-fair-cli-wrapping.md"
+            "[cli] note: --harness notes dumps SKILL.md into the system prompt. "
+            "That is not a Claude Code skill-invocation test and may trigger refusals "
+            "(issue #1). Use --harness auto or --harness skill for slash invoke."
         )
+    elif skill_profiles:
+        names = ", ".join(sorted({p.skill_name for p in skill_profiles}))
+        print(f"[cli] skill harness active for: {names} (slash invoke via claude -p)")
 
     judge_provider = args.judge_provider
     if not judge_provider:

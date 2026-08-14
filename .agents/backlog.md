@@ -2,18 +2,17 @@
 
 ## Open
 
-- [ ] Class split is markdown-as-notes, not live hook/skill invocation — same limit as ADR 0004
 - [ ] Hooks with no markdown are name-inventories only; executing hooks is future work
-
-- [ ] Gemini CLI OAuth login (interactive, one-time) then wire `call_gemini_cli` — issue #2
-- [ ] Real skill-invocation harness (not system-prompt dump) — issue #1
-- [ ] Direct xAI/OpenAI API key path still broken (CLI OAuth workaround shipped) — issue #3
-- [ ] Multi-model full run (sonnet/haiku/grok/codex × 10 cases) — kicked off 2026-08-14; watch `/tmp/contextbench-multi-20260814.log` (may be buffered) and `results/leaderboard_*.md`
-- [ ] Optional: commit Elo + 4 new cases + cursor provider when Cameron asks
+- [ ] Direct xAI/OpenAI API key path still broken on account side — CLI OAuth workaround is the supported path (issue #3)
 
 ## Done 2026-08-14
 
 - [x] Arena-style Elo + bootstrap CI on leaderboard
 - [x] Cases 07–10 (review/boundary/plan/ambiguity)
 - [x] cursor-agent provider (`--models cursor`) via subscription OAuth
+- [x] Gemini via `gmi` subscription wrapper (`--models gemini`)
+- [x] Real skill-invocation harness (`--harness skill` / auto on SKILL.md dirs) — issue #1
+- [x] Judge parser tolerates truncated / score-only JSON
 - [x] ADR 0002 note: CLI OAuth preferred; OmniRoute optional
+- [x] Multi-model full run → `results/leaderboard_20260814T224037Z.md`
+- [x] Skill smoke (caveman × haiku) → `results/leaderboard_20260814T230358Z.md`

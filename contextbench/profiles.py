@@ -6,6 +6,8 @@ from pathlib import Path
 
 from contextbench.models import Profile
 
+HARNESS_MODES = ("auto", "notes", "skill")
+
 _MODELS = [
     ("anthropic", "claude-opus-5"),
     ("anthropic", "claude-sonnet-5"),
@@ -22,6 +24,7 @@ MODEL_ALIASES = {
     "grok": ("grok", "grok-4.6"),
     "codex": ("codex", "gpt-5.6-luna"),
     "cursor": ("cursor", "auto"),
+    "gemini": ("gemini", "gemini-3.6-flash-high"),
 }
 
 
@@ -68,6 +71,7 @@ def default_profiles(
     models: list[tuple[str, str]] | None = None,
     provider: str | None = None,
     include_bare: bool = True,
+    harness: str = "auto",
 ) -> list[Profile]:
     """Build the Profile matrix.
 
@@ -75,7 +79,11 @@ def default_profiles(
     (label, path, include, extra_notes, class_id, kind).
     None → the synthetic examples/context demo.
     provider: "auto" / None uses the CLI harness unless ANTHROPIC_API_KEY is set.
+    harness: auto=skill dirs use slash invoke; notes=always system-prompt wrap;
+    skill=require skill dirs with SKILL.md.
     """
+    if harness not in HARNESS_MODES:
+        raise ValueError(f"unknown harness mode: {harness}")
     if models is None:
         models = list(_MODELS)
     if context_dirs is None:
@@ -101,6 +109,17 @@ def default_profiles(
             )
         for entry in context_dirs:
             label, context_dir, include, extra, class_id, kind = _normalize_bundle(entry)
+            skill_name = ""
+            if harness != "notes":
+                from contextbench.context import detect_skill_name
+
+                detected = detect_skill_name(context_dir)
+                if harness == "skill" and not detected:
+                    raise ValueError(
+                        f"--harness skill requires a skill dir with SKILL.md at its root: "
+                        f"{context_dir}"
+                    )
+                skill_name = detected or ""
             profiles.append(
                 Profile(
                     id=f"{model}+{label}",
@@ -111,6 +130,7 @@ def default_profiles(
                     extra_notes=extra,
                     class_id=class_id,
                     kind=kind,
+                    skill_name=skill_name,
                 )
             )
     return profiles

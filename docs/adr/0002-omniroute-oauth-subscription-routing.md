@@ -1,7 +1,7 @@
 # ADR 0002: Testing via OmniRoute OAuth Subscriptions & Harness Realities
 
 ## Status
-Accepted
+Accepted — **Superseded in practice by direct CLI harness (`claude` / `grok` / `codex` OAuth adapters); OmniRoute optional/fallback only.**
 
 ## Context
 1. **User Goal**: The user (Cameron) explicitly wants to run model comparisons using his existing **subscriptions / OAuth accounts** (Claude Team/Pro OAuth, Grok/xAI OAuth, Codex/Cursor/Antigravity OAuth pools stored in OmniRoute), **NOT API key pay-per-token credits**.

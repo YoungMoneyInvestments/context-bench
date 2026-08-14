@@ -5,7 +5,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from contextbench.context import bundle_skill_files, wrap_request
+from contextbench.context import bundle_skill_files, detect_skill_name, wrap_request
 from contextbench.profiles import default_profiles, label_for_context_dir, resolve_models
 
 
@@ -68,6 +68,50 @@ def test_bundle_skill_files_finds_skill_md():
         (tmp_path / "SKILL.md").write_text("# skill")
         assert bundle_skill_files(str(tmp_path)) == ["SKILL.md"]
     assert bundle_skill_files(None) == []
+
+
+def test_detect_skill_name_returns_dir_basename():
+    with tempfile.TemporaryDirectory() as raw:
+        tmp_path = Path(raw) / "caveman"
+        tmp_path.mkdir()
+        (tmp_path / "SKILL.md").write_text("# caveman skill")
+        assert detect_skill_name(str(tmp_path)) == "caveman"
+
+
+def test_detect_skill_name_missing_skill_md():
+    with tempfile.TemporaryDirectory() as raw:
+        assert detect_skill_name(raw) is None
+
+
+def test_default_profiles_skill_harness_auto_sets_skill_name():
+    with tempfile.TemporaryDirectory() as raw:
+        skill_dir = Path(raw) / "caveman"
+        skill_dir.mkdir()
+        (skill_dir / "SKILL.md").write_text("# skill")
+        profiles = default_profiles(
+            context_dirs=[("caveman", str(skill_dir))],
+            models=[("anthropic", "claude-opus-5")],
+            provider="cli",
+            include_bare=True,
+            harness="auto",
+        )
+    skill_profile = next(p for p in profiles if p.context_dir)
+    assert skill_profile.skill_name == "caveman"
+    bare = next(p for p in profiles if p.context_dir is None)
+    assert bare.skill_name == ""
+
+
+def test_default_profiles_harness_skill_rejects_non_skill_dir():
+    with tempfile.TemporaryDirectory() as raw:
+        try:
+            default_profiles(
+                context_dirs=[("demo", raw)],
+                models=[("anthropic", "claude-opus-5")],
+                harness="skill",
+            )
+            assert False, "expected ValueError"
+        except ValueError as exc:
+            assert "--harness skill requires" in str(exc)
 
 
 if __name__ == "__main__":

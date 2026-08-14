@@ -67,8 +67,11 @@ python3 -m contextbench.cli --context-dir ~/.grok
 # One class family, one model
 python3 -m contextbench.cli --context-dir ~/.claude --split families --models opus
 
-# One skill at a time
-python3 -m contextbench.cli --context-dir ~/.claude --split skills --models opus
+# One skill at a time (slash-invokes the real Claude Code skill — not a SKILL.md dump)
+python3 -m contextbench.cli --context-dir ~/.claude/skills/caveman --harness skill --models haiku
+
+# Subscription CLIs (no API keys)
+python3 -m contextbench.cli --models sonnet,haiku,grok,codex,cursor,gemini --smoke
 ```
 
 `export XAI_API_KEY=...` optionally adds Grok (`--models xai:grok-4`).
@@ -90,14 +93,17 @@ The leaderboard leads with the class matrix, then mean scores, Arena-style Elo (
 | `--wrap fair` | Default. Case is the user message; skills and hooks are optional system context. |
 | `--wrap system` | Skills and hooks as a raw system prompt. |
 | `--wrap raw` | Old `"System Instructions:"` user-turn wrap ([issue #1](https://github.com/YoungMoneyInvestments/context-bench/issues/1)). |
-| `--models opus,sonnet,haiku` | Or `provider:model-id`. |
+| `--harness auto` | Default. Skill dirs (`SKILL.md`) use slash-invoke; prose dirs use notes wrap. |
+| `--harness skill` | Force slash-invoke (`claude -p /skillname`). Bare arm gets `--disable-slash-commands`. |
+| `--harness notes` | Always dump markdown as notes (old behavior). |
+| `--models opus,sonnet,haiku` | Also: `grok`, `codex`, `cursor`, `gemini`, or `provider:model-id`. |
 | `--smoke` | First Case × first model. Use this before a 6×3×N burn. |
 
 ## Read the numbers honestly
 
 The judge is a model call, not ground truth. Read a few `results/judged_*.json` reasons before trusting a delta. Ten Cases is a smoke bench, not a statistically powered one. If a Profile swings on 1–2 Cases, that is noise.
 
-**SKILL.md files are not invoked as Claude Code skills.** v1 concatenates markdown into a system prompt. That is the right test for a `CLAUDE.md`. It is the wrong test for a skill that should be called by name. `--wrap fair` stops Opus/Sonnet from treating the dump as a jailbreak ([ADR 0004](./docs/adr/0004-fair-cli-wrapping.md)).
+**Skill dirs use real Claude Code slash-invoke by default** (`--harness auto` / `--harness skill`): `claude -p /skillname` with the Case as the rest of the prompt. That is the fair skill-ablation path ([ADR 0004](./docs/adr/0004-fair-cli-wrapping.md)). Prose bundles (`CLAUDE.md`, `examples/context`) still use notes wrap. `--harness notes` forces the old dump for either.
 
 **Hooks that are only code** are inventoried as names, not executed. The class still shows up. A hook that never writes markdown cannot be scored as context — it is scored as "does reminding the model these hooks exist help," which is a weak test and labeled that way.
 

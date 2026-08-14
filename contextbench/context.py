@@ -55,6 +55,20 @@ def bundle_skill_files(context_dir: str | None) -> list[str]:
     return [str(p.relative_to(root)) for p in sorted(root.rglob("SKILL.md"))]
 
 
+def detect_skill_name(context_dir: str) -> str | None:
+    """Return the skill name if context_dir is a Claude Code skill directory.
+
+    A skill dir has SKILL.md at its root (e.g. ``~/.claude/skills/caveman/SKILL.md``).
+    The skill name is the directory basename (``caveman``).
+    """
+    root = Path(context_dir).expanduser()
+    if not root.is_dir():
+        return None
+    if (root / "SKILL.md").is_file():
+        return root.name or None
+    return None
+
+
 def wrap_request(task: str, notes: str, mode: str = "fair") -> tuple[str, str]:
     """Return (system, user) for a provider call.
 

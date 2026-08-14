@@ -23,6 +23,17 @@ made Opus 5 / Sonnet 5 refuse the Case (injection suspicion, skill help-text, "n
 
 ## Consequences
 
-This is still not a Claude Code skill-invocation test. `SKILL.md` files are written for a structured Skill tool, not for a one-shot system prompt. Fair wrap stops the false "model refused" collapse; it does not claim a skill works the same way it would under `/skill` or auto-invocation. A real harness loop remains future work.
+Fair wrap stops the false "model refused" collapse when SKILL.md is dumped as a system prompt; it does not claim a skill works the same way it would under `/skill` or auto-invocation.
 
-`--bare` on the Claude CLI still cannot give a clean-room baseline under OAuth (ADR 0003). We do not pass that flag.
+## Update (2026-08-14): skill harness shipped
+
+Real Claude Code skill invocation is now supported via `--harness auto` (default) or `--harness skill`:
+
+- Skill directories (`.../skills/<name>/SKILL.md`) set `Profile.skill_name` and the runner calls `call_cli_skill_harness`, which builds `/{skill_name}\n\n{case prompt}` for `claude -p`.
+- SKILL.md is **not** passed via `--system-prompt-file` on skill profiles — that path still triggers Opus/Sonnet refusal (issue #1 mechanism).
+- Bare baseline arms in the same run pass `--disable-slash-commands` so slash skills do not activate during comparison.
+- **`--bare` is forbidden** on the Claude CLI harness: it drops OAuth and fails with "Not logged in". Do not use it.
+- **`CLAUDE_CONFIG_DIR` isolation is forbidden** for the same reason — it loses OAuth.
+- `--harness notes` preserves the old fair/system/raw wrap for A/B against the slash path.
+
+See `contextbench/providers.py:call_cli_skill_harness` and `contextbench/runner.py`.
