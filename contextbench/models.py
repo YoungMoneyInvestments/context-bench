@@ -53,5 +53,5 @@ class AblationDelta:
     bare_score: float
     with_skill_score: float
     delta: float
-    recommendation: str  # "KEEP" | "PROMPT_BLOAT" | "REMOVE"
+    recommendation: str  # "Helps" | "No lift" | "Hurts"
     kind: str = ""

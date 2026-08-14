@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from collections import defaultdict
 
+from contextbench.ablation import VERDICT_HELPS, VERDICT_HURTS, VERDICT_NO_LIFT
 from contextbench.models import AblationDelta, Judgment
 
-# Stronger model → higher rank. Used only to say "fading" when delta drops.
+# Stronger model → higher rank. Used only to say when newer models need the class less.
 _MODEL_TIER = {
     "claude-haiku-4-5-20251001": 0,
     "claude-haiku-4.5": 0,
@@ -23,7 +24,7 @@ def _tier(model: str) -> int | None:
 
 
 def _trend(class_deltas: list[AblationDelta]) -> str:
-    """If stronger models get less lift from this class, it is fading."""
+    """If stronger models get less lift from this class, newer models need it less."""
     ranked = [( _tier(d.model), d.delta) for d in class_deltas if _tier(d.model) is not None]
     ranked = [(t, d) for t, d in ranked if t is not None]
     if len(ranked) < 2:
@@ -31,11 +32,11 @@ def _trend(class_deltas: list[AblationDelta]) -> str:
     ranked.sort(key=lambda item: item[0])
     first, last = ranked[0][1], ranked[-1][1]
     if last <= -1.0 and first > last:
-        return "fading — stronger models need it less"
+        return "newer models need this less"
     if last + 0.4 < first:
-        return "fading"
+        return "newer models need this less"
     if last >= 1.5 and last >= first:
-        return "still earning"
+        return "still helps on stronger models"
     return "—"
 
 
@@ -60,13 +61,17 @@ def class_matrix_markdown(deltas: list[AblationDelta]) -> str:
         return (t if t is not None else 50, m)
 
     models = sorted(models, key=_sort_model)
-    header = "| Class | " + " | ".join(f"`{m}`" for m in models) + " | Worst Δ | Call | Trend |"
+    header = (
+        "| Kind of context | " + " | ".join(f"`{m}`" for m in models)
+        + " | Worst change | What it did | Across models |"
+    )
     sep = "|" + "---|" * (len(models) + 4)
     lines = [
-        "## Which classes still earn tokens",
+        "## Did this extra context help?",
         "",
-        "Each class is scored **alone** against bare. Read down a column: if Opus is worse "
-        "than Haiku on the same class, that class is what newer models are outgrowing.",
+        "Each kind of context is scored **by itself** against the same model with nothing extra. "
+        "Read down a column: if a stronger model does worse with the same pile, that pile is "
+        "what the newer model has outgrown.",
         "",
         header,
         sep,
@@ -93,9 +98,9 @@ def class_matrix_markdown(deltas: list[AblationDelta]) -> str:
         )
     lines.extend([
         "",
-        "Worst Δ is the most negative model on that class — that is the bloat signal. "
-        "A class that is KEEP on Haiku and REMOVE on Opus is the one to delete first "
-        "when you upgrade the model.",
+        "Worst change is the model that dropped the most with this attached. "
+        "If it Helps a smaller model and Hurts a stronger one, cut it when you upgrade — "
+        "the stronger model already knows that stuff.",
     ])
     return "\n".join(lines)
 
@@ -158,49 +163,46 @@ def to_markdown(
         }
         if delta_ci:
             header = (
-                "| Model | Skill / Context | Bare Score | With Context | Delta (Δ) | "
-                "CI Low | CI High | Recommendation |"
+                "| Model | Extra context | Without it | With it | Change | "
+                "CI low | CI high | What it did |"
             )
             separator = "|---|---|---|---|---|---|---|---|"
         else:
             header = (
-                "| Model | Skill / Context | Bare Score | With Context | Delta (Δ) | Recommendation |"
+                "| Model | Extra context | Without it | With it | Change | What it did |"
             )
             separator = "|---|---|---|---|---|---|"
 
         lines.extend([
             "",
-            "## Skill Ablation & Recommendation Matrix",
+            "## Same model, with vs without the extra context",
             "",
             header,
             separator,
         ])
         for d in deltas:
-            icon = "✅" if d.recommendation == "KEEP" else ("❌" if d.recommendation == "REMOVE" else "🧹")
             ci = ci_lookup.get((d.model, d.skill_name))
             if ci:
                 lines.append(
                     f"| `{d.model}` | `{d.skill_name}` | {d.bare_score} | {d.with_skill_score} | "
                     f"{d.delta:+.2f} | {ci['ci_low']:+.2f} | {ci['ci_high']:+.2f} | "
-                    f"{icon} **{d.recommendation}** |"
+                    f"**{d.recommendation}** |"
                 )
             else:
                 lines.append(
                     f"| `{d.model}` | `{d.skill_name}` | {d.bare_score} | {d.with_skill_score} | "
-                    f"{d.delta:+.2f} | {icon} **{d.recommendation}** |"
+                    f"{d.delta:+.2f} | **{d.recommendation}** |"
                 )
         lines.extend([
             "",
-            "**What to do about it** (this is whole-bundle Delta, not per-file — it tells you"
-            " *whether* to cut, not *which lines*):",
-            "- ✅ **KEEP** (Δ ≥ +1.5): clear win here, leave it as-is.",
-            "- 🧹 **PROMPT_BLOAT** (-1.0 < Δ < +1.5): not clearly earning its token cost on these"
-            " case types. Split the bundle into smaller files and re-run — the ones with Δ near"
-            " zero on their own are what to cut first.",
-            "- ❌ **REMOVE** (Δ ≤ -1.0): actively made the model worse here. Don't just delete it —"
-            " read a couple of `results/judged_*.json` reasoning strings for this profile first;"
-            " a large negative Δ is sometimes a harness artifact (e.g. issue #1's raw"
-            " system-prompt wrapping) rather than the content itself being bad.",
+            f"- **{VERDICT_HELPS}** (change ≥ +1.5): the model scored clearly better with this "
+            "attached. Leave it.",
+            f"- **{VERDICT_NO_LIFT}** (−1.0 < change < +1.5): almost the same either way. You are "
+            "paying tokens for little. Split the bundle and re-run; cut the files that still "
+            "show no lift on their own.",
+            f"- **{VERDICT_HURTS}** (change ≤ −1.0): the model scored worse with this attached. "
+            "Take it out — but read a couple of `results/judged_*.json` reasons first. A big "
+            "drop is sometimes the wrapping (issue #1), not the content.",
         ])
 
     return "\n".join(lines)

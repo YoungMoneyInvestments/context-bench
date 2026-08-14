@@ -6,6 +6,19 @@ from contextbench.models import AblationDelta, Case, Judgment, Profile
 from contextbench.runner import run_all
 from contextbench.judge import judge_all
 
+# What extra context did to the score vs the same model with nothing extra attached.
+VERDICT_HELPS = "Helps"
+VERDICT_NO_LIFT = "No lift"
+VERDICT_HURTS = "Hurts"
+
+
+def verdict_for_delta(delta: float) -> str:
+    if delta >= 1.5:
+        return VERDICT_HELPS
+    if delta <= -1.0:
+        return VERDICT_HURTS
+    return VERDICT_NO_LIFT
+
 
 def analyze_deltas(judgments: list[Judgment], profiles: list[Profile]) -> list[AblationDelta]:
     """Calculates interference delta (Score_with_skill - Score_bare) per model and skill."""
@@ -39,13 +52,6 @@ def analyze_deltas(judgments: list[Judgment], profiles: list[Profile]) -> list[A
         skill_mean = sum(skill_scores) / len(skill_scores)
         delta = round(skill_mean - bare_mean, 2)
 
-        if delta >= 1.5:
-            rec = "KEEP"
-        elif delta <= -1.0:
-            rec = "REMOVE"
-        else:
-            rec = "PROMPT_BLOAT"
-
         skill_name = sp.class_id or (Path(sp.context_dir).name if sp.context_dir else sp.id)
         deltas.append(
             AblationDelta(
@@ -54,7 +60,7 @@ def analyze_deltas(judgments: list[Judgment], profiles: list[Profile]) -> list[A
                 bare_score=round(bare_mean, 2),
                 with_skill_score=round(skill_mean, 2),
                 delta=delta,
-                recommendation=rec,
+                recommendation=verdict_for_delta(delta),
                 kind=sp.kind,
             )
         )

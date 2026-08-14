@@ -91,20 +91,20 @@ def test_build_system_prompt_honors_include_and_extra_notes():
 
 def test_class_matrix_lists_models_across_classes():
     deltas = [
-        AblationDelta("claude-haiku-4-5-20251001", "hooks", 8.0, 8.5, 0.5, "PROMPT_BLOAT", kind="hooks"),
-        AblationDelta("claude-sonnet-5", "hooks", 8.0, 7.6, -0.4, "PROMPT_BLOAT", kind="hooks"),
-        AblationDelta("claude-opus-5", "hooks", 8.0, 6.5, -1.5, "REMOVE", kind="hooks"),
-        AblationDelta("claude-opus-5", "skills", 8.0, 9.6, 1.6, "KEEP", kind="skills"),
+        AblationDelta("claude-haiku-4-5-20251001", "hooks", 8.0, 8.5, 0.5, "No lift", kind="hooks"),
+        AblationDelta("claude-sonnet-5", "hooks", 8.0, 7.6, -0.4, "No lift", kind="hooks"),
+        AblationDelta("claude-opus-5", "hooks", 8.0, 6.5, -1.5, "Hurts", kind="hooks"),
+        AblationDelta("claude-opus-5", "skills", 8.0, 9.6, 1.6, "Helps", kind="skills"),
     ]
     table = class_matrix_markdown(deltas)
     assert "hooks" in table
-    assert "fading" in table.lower() or "models need it less" in table.lower()
-    assert "REMOVE" in table
+    assert "newer models need this less" in table.lower()
+    assert "Hurts" in table
     md = to_markdown(
         [Judgment("c1", "p", 7, "ok", "j")],
         deltas,
     )
-    assert "Which classes still earn tokens" in md
+    assert "Did this extra context help?" in md
 
 
 def test_default_profiles_can_carry_class_include():
