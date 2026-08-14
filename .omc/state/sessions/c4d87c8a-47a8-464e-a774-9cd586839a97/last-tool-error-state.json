@@ -1,0 +1,7 @@
+{
+  "tool_name": "Bash",
+  "tool_input_preview": "{\"command\":\"cd ~/Projects/context-bench && cat results/runs_*.json | python3 -c \\\"import json,sys; print(len(json.load(sys.stdin)))\\\"; rm -f results/runs_*.json\",\"description\":\"Confirm zero successful...",
+  "error": "Exit code 1\n0\n⛔ rm is disabled. Use: trash <path>\n   Paths you tried to delete: -f results/runs_20260814T154948Z.json",
+  "timestamp": "2026-08-14T15:50:16.101Z",
+  "retry_count": 1
+}

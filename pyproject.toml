@@ -1,0 +1,17 @@
+[project]
+name = "contextbench"
+version = "0.1.0"
+description = "Benchmarks whether your CLAUDE.md/skills/system prompt actually helps, per-model."
+requires-python = ">=3.10"
+dependencies = [
+    "anthropic>=0.40",
+    "openai>=1.0",
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+contextbench = "contextbench.cli:main"
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
