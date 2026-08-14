@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="640" viewBox="0 0 1280 640" role="img" aria-label="context-bench: score whether your CLAUDE.md helps">
+  <rect width="1280" height="640" fill="#0b0d10"/>
+  <text x="72" y="92" fill="#e8a54b" font-family="ui-sans-serif, system-ui, sans-serif" font-size="22" letter-spacing="4">CONTEXT-BENCH</text>
+  <text x="72" y="190" fill="#f4f0e6" font-family="ui-sans-serif, system-ui, sans-serif" font-size="56" font-weight="700">Does your CLAUDE.md</text>
+  <text x="72" y="258" fill="#f4f0e6" font-family="ui-sans-serif, system-ui, sans-serif" font-size="56" font-weight="700">make the model better?</text>
+  <text x="72" y="330" fill="#9aa3ad" font-family="ui-sans-serif, system-ui, sans-serif" font-size="28">Same cases. Bare vs your notes. Blind judge. A delta.</text>
+  <g font-family="ui-sans-serif, system-ui, sans-serif" font-size="22" font-weight="700">
+    <rect x="72" y="400" width="160" height="56" rx="8" fill="#102018" stroke="#2e5a40"/>
+    <text x="152" y="436" text-anchor="middle" fill="#7dcea0">KEEP</text>
+    <rect x="252" y="400" width="240" height="56" rx="8" fill="#1c160c" stroke="#6a4a1e"/>
+    <text x="372" y="436" text-anchor="middle" fill="#e8a54b">PROMPT_BLOAT</text>
+    <rect x="512" y="400" width="180" height="56" rx="8" fill="#1c1010" stroke="#6a2a28"/>
+    <text x="602" y="436" text-anchor="middle" fill="#d94b3d">REMOVE</text>
+  </g>
+  <text x="72" y="540" fill="#6b7380" font-family="ui-sans-serif, system-ui, sans-serif" font-size="20">github.com/YoungMoneyInvestments/context-bench</text>
+</svg>

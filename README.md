@@ -1,97 +1,82 @@
 # context-bench
 
-<p align="center">
-  <img src="docs/assets/icon-scale.jpg" width="160" alt="context-bench logo: a scale weighing one clean page against a crumbling stack" />
-</p>
+Score whether a `CLAUDE.md` or skill bundle actually helps a model — or just spends tokens.
 
-**Does your CLAUDE.md actually make the model better — or just quieter about doing what it would have done anyway?**
-
-Boris Cherny told a YC room to delete their CLAUDE.md, skills, and hooks every six months and see what happens. [Nate Herk's video](https://youtu.be/XNQBCRcwXV4) is what made that advice land. This repo turns it into a score.
-
-<p align="center">
-  <img src="docs/assets/hero-scale.jpg" alt="A brass scale: one glowing page lifts while a tower of documents collapses" />
-</p>
-
-**42-second film:** [`docs/assets/context-bench.mp4`](docs/assets/context-bench.mp4) (16:9) · [`docs/assets/context-bench-9x16.mp4`](docs/assets/context-bench-9x16.mp4) (Reels / Shorts / TikTok)
-
-## What it does
-
-Runs a fixed set of **Cases** (prompt + grading rubric) against a matrix of **Profiles** — every combination of {model} × {your context bundle vs. nothing extra} — then has a separate judge model score every response against that Case's rubric, **blind** to which Profile produced it.
-
-```
-Case × Profile → Run        (raw output)
-Run × Judge    → Judgment   (1-10 + one-sentence reason)
-Judgments      → Leaderboard (mean score + KEEP / PROMPT_BLOAT / REMOVE)
+```bash
+pip install -e .
+python3 -m contextbench.cli --context-dir ~/.claude
 ```
 
-Vocabulary: [`CONTEXT.md`](./CONTEXT.md).
+Same fixed **Cases** (prompt + rubric). Two **Profiles** per model: `bare` versus `+your-dir`. A separate model **judges** every answer against the rubric and never sees which Profile wrote it. The leaderboard is the delta.
 
-## 30-second version
+<p align="center">
+  <img src="docs/assets/loop.svg" alt="Case times Profile, then a blind judge, then KEEP, PROMPT_BLOAT, or REMOVE" width="100%" />
+</p>
 
-| Arm | What the model sees |
+| Call | When |
 |---|---|
-| `bare` | The Case. No extra bundle. |
-| `+your-dir` | The Case, plus every `*.md` in that directory. |
+| **KEEP** | Δ ≥ +1.5 — the bundle earns its tokens |
+| **PROMPT_BLOAT** | in between — it barely moved the score |
+| **REMOVE** | Δ ≤ −1.0 — the model got worse with the notes |
 
-If the bundle's delta is ≥ +1.5, the matrix says **KEEP**. If it's ≤ −1.0, **REMOVE**. In between is **PROMPT_BLOAT** — probably not earning its tokens.
+Boris Cherny told a YC room to delete `CLAUDE.md`, skills, and hooks every six months and see what the model does. [Nate Herk's video](https://youtu.be/XNQBCRcwXV4) is what made that advice circulate. People have been doing it as a vibe check. This repo is the vibe check with a rubric.
 
-A real run of the synthetic demo bundle (`examples/context`) looked like this:
+**Film (Boris clip, then the bench):** [`docs/assets/context-bench.mp4`](docs/assets/context-bench.mp4) · vertical [`docs/assets/context-bench-9x16.mp4`](docs/assets/context-bench-9x16.mp4)
+
+## Example
+
+A smoke run of the synthetic demo bundle (`examples/context`) against six Cases:
 
 | Model | Bare | +example | Δ | Call |
 |---|---|---|---|---|
-| Haiku 4.5 | 8.5 | 9.3 | +0.83 | PROMPT_BLOAT |
-| Sonnet 5 | 8.5 | 9.0 | +0.50 | PROMPT_BLOAT |
-| Opus 5 | 8.3 | 7.3 | −1.00 | REMOVE |
+| Haiku 4.5 | 8.83 | 8.67 | −0.17 | PROMPT_BLOAT |
+| Sonnet 5 | 8.83 | 9.17 | +0.33 | PROMPT_BLOAT |
+| Opus 5 | 8.17 | 9.00 | +0.83 | PROMPT_BLOAT |
 
-Same six Cases. Same judge. Opus got worse with the extra notes. That is the whole point of measuring.
-
-<p align="center">
-  <img src="docs/assets/desk-buried.jpg" width="48%" alt="Desk buried in printed instructions" />
-  <img src="docs/assets/desk-clean.jpg" width="48%" alt="The same desk after the pile is gone" />
-</p>
+None of those notes cleared KEEP. That is the point of measuring instead of guessing.
 
 ## Quickstart
 
-No API key needed for Claude Profiles or the judge — they run through your local `claude` CLI on your existing OAuth session (`claude /login`).
+No API key for Claude Profiles or the judge — they use your local `claude` CLI (`claude /login`).
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e .
 
-# Demo: synthetic Acme Labs bundle vs bare
+# Synthetic demo first
 python3 -m contextbench.cli --smoke
 
-# The run that matters: YOUR CLAUDE.md / skills directory
+# The run that matters
 python3 -m contextbench.cli --context-dir ~/.claude
 
 # One skill at a time
 python3 -m contextbench.cli --context-dir ~/.claude/skills/caveman --models opus
 ```
 
-`export XAI_API_KEY=...` optionally adds Grok Profiles (`--models xai:grok-4`).
+`export XAI_API_KEY=...` optionally adds Grok (`--models xai:grok-4`).
 
-Results land in `results/runs_<ts>.json`, `results/judged_<ts>.json`, and a rendered `results/leaderboard_<ts>.md`.
+Writes `results/runs_<ts>.json`, `results/judged_<ts>.json`, and `results/leaderboard_<ts>.md`.
 
-### Flags that make it usable
+### Flags
 
 | Flag | What it does |
 |---|---|
-| `--context-dir PATH` | Bundle to test. Repeatable. Default is `examples/context`. |
+| `--context-dir PATH` | Bundle to test. Repeatable. Default: `examples/context`. |
 | `--wrap fair` | Default. Case is the user message; notes are optional system context. |
-| `--wrap system` | Notes go in as a raw system prompt (CLAUDE.md-shaped prose). |
-| `--wrap raw` | Reproduce the old "System Instructions:" user-turn wrap (issue #1). |
+| `--wrap system` | Notes as a raw system prompt. |
+| `--wrap raw` | Old `"System Instructions:"` user-turn wrap ([issue #1](https://github.com/YoungMoneyInvestments/context-bench/issues/1)). |
 | `--models opus,sonnet,haiku` | Or `provider:model-id`. |
 | `--smoke` | First Case × first model. Use this before a 6×3×N burn. |
 
-## Read the leaderboard honestly
+## Read the numbers honestly
 
-The judge is a model call, not ground truth. Read a few `results/judged_*.json` reasoning strings before trusting a delta. If a Profile swings on 1–2 Cases, that is noise — there are six rubric-graded Cases here, not a statistically powered benchmark.
+The judge is a model call, not ground truth. Read a few `results/judged_*.json` reasons before trusting a delta. Six Cases is a smoke bench, not a statistically powered one. If a Profile swings on 1–2 Cases, that is noise.
 
-**SKILL.md files are not Claude Code skills in this bench.** v1 concatenates markdown into a system prompt. That is the right test for a CLAUDE.md. It is the wrong test for a skill that is supposed to be invoked by name. `--wrap fair` stops Opus/Sonnet from treating the dump as a jailbreak (see [ADR 0004](./docs/adr/0004-fair-cli-wrapping.md) and [issue #1](https://github.com/YoungMoneyInvestments/context-bench/issues/1)). A real harness-invocation lane is still future work.
+**SKILL.md files are not invoked as Claude Code skills.** v1 concatenates markdown into a system prompt. That is the right test for a `CLAUDE.md`. It is the wrong test for a skill that should be called by name. `--wrap fair` stops Opus/Sonnet from treating the dump as a jailbreak ([ADR 0004](./docs/adr/0004-fair-cli-wrapping.md)).
 
-### Known limitation: `bare` isn't zero-context
+**`bare` is not zero-context.** `claude -p` still loads your ambient `~/.claude` config on every Profile, including `bare`. The constant cancels out of the delta. Absolute scores are *your* scores ([ADR 0003](./docs/adr/0003-bare-is-relative-to-ambient-config-under-oauth.md)).
 
-Running through `claude -p` so it can use your OAuth session means your own `~/.claude/CLAUDE.md` / skills / hooks load on *every* Profile, `bare` included. There is no flag that disables that without also disabling OAuth ([ADR 0003](./docs/adr/0003-bare-is-relative-to-ambient-config-under-oauth.md)). The constant cancels out of the `bare` vs `+bundle` Delta. Absolute scores are *your* scores, not a universal number.
+Vocabulary: [`CONTEXT.md`](./CONTEXT.md).
 
 ## Adding Cases
 
@@ -103,16 +88,13 @@ prompt: |
   <the task>
 rubric:
   - <criterion the judge should check>
-  - <another criterion>
 ```
 
-## Why this exists
+## Why
 
-Anthropic deleted ~80% of Claude Code's own system prompt when Opus 5 shipped. The model got better. Boris's follow-up was: do the same thing to *your* stack, on a six-month cadence.
+Anthropic deleted ~80% of Claude Code's own system prompt when Opus 5 shipped. The model got better. Boris's follow-up: do the same thing to *your* stack, on a six-month cadence, then add back only what you watch fail.
 
-People have been doing that as a vibe check. context-bench is the vibe check with a rubric and a blind judge.
-
-Watch: [I Deleted All My Claude Skills... And Claude Got Smarter](https://youtu.be/XNQBCRcwXV4) · [Boris at YC Startup School](https://www.youtube.com/watch?v=qyPCVqFUyDo)
+Source clips in the film: [Boris at YC Startup School](https://www.youtube.com/watch?v=qyPCVqFUyDo) · [Nate Herk](https://youtu.be/XNQBCRcwXV4). Short attributed excerpts; the rest is this project's explainer.
 
 ## License
 
