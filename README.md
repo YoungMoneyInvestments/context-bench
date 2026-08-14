@@ -4,19 +4,25 @@ Find which **skills** and **hooks** still help — and which newer models have o
 
 Works on Claude Code, Codex, Grok, or any LLM tool with a skills / hooks / memory directory. It splits that pile, scores each class **alone** against bare, and prints KEEP / PROMPT_BLOAT / REMOVE.
 
-**No API key for Claude.** Profiles and the judge use your local `claude` CLI (`claude /login`). Optional: `XAI_API_KEY` for Grok.
+**No API key to look around.** `--demo` is fully offline (in-process mocks, no OAuth). Real runs use your local `claude` CLI (`claude /login`). Optional: `XAI_API_KEY` for Grok.
 
 ## Run it
 
 ```bash
 git clone https://github.com/YoungMoneyInvestments/context-bench.git
 cd context-bench
+```
+
+```bash
 python3 -m venv .venv && source .venv/bin/activate
 pip install -e .
+python3 -m contextbench.cli --demo
+open results/dashboard.html
+```
 
-# 30-second smoke
-python3 -m contextbench.cli --smoke
+### Real subscription / OAuth runs
 
+```bash
 # The run that matters
 python3 -m contextbench.cli --context-dir ~/.claude
 ```
@@ -60,6 +66,9 @@ GitHub’s file viewer will not play this mp4. Watch it here:
 ## More commands
 
 ```bash
+# 30-second live smoke (needs a logged-in `claude` CLI)
+python3 -m contextbench.cli --smoke
+
 # One class family, one model
 python3 -m contextbench.cli --context-dir ~/.claude --split families --models opus
 
@@ -87,6 +96,7 @@ python3 -m contextbench.cli --models sonnet,haiku,grok,codex,cursor,gemini --smo
 | `--harness skill` | Force slash-invoke (`claude -p /skillname`). Bare arm gets `--disable-slash-commands`. |
 | `--harness notes` | Always dump markdown as extra system text (old behavior). |
 | `--models opus,sonnet,haiku` | Also: `grok`, `codex`, `cursor`, `gemini`, or `provider:model-id`. |
+| `--demo` | Offline mock run. No OAuth, no API keys, no network. Writes `results/dashboard.html`. |
 | `--smoke` | First Case × first model. Use this before a 6×3×N burn. |
 
 ## Read the numbers honestly
