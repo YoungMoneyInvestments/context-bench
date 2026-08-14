@@ -46,7 +46,7 @@ def analyze_deltas(judgments: list[Judgment], profiles: list[Profile]) -> list[A
         else:
             rec = "PROMPT_BLOAT"
 
-        skill_name = Path(sp.context_dir).name if sp.context_dir else sp.id
+        skill_name = sp.class_id or (Path(sp.context_dir).name if sp.context_dir else sp.id)
         deltas.append(
             AblationDelta(
                 model=model,
@@ -55,6 +55,7 @@ def analyze_deltas(judgments: list[Judgment], profiles: list[Profile]) -> list[A
                 with_skill_score=round(skill_mean, 2),
                 delta=delta,
                 recommendation=rec,
+                kind=sp.kind,
             )
         )
 

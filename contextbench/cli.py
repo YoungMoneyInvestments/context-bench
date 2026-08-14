@@ -8,11 +8,45 @@ from pathlib import Path
 
 from contextbench.ablation import analyze_deltas
 from contextbench.cases import load_cases
+from contextbench.classes import SPLIT_MODES, discover_classes, is_claude_home
 from contextbench.context import WRAP_MODES, bundle_skill_files
 from contextbench.leaderboard import to_markdown
+
+try:
+    from contextbench.elo import bootstrap_delta_ci, elo_ratings
+except ImportError:  # Elo shipped in a parallel change; class split must run without it
+    bootstrap_delta_ci = None
+    elo_ratings = None
 from contextbench.profiles import default_profiles, label_for_context_dir, resolve_models
 from contextbench.runner import run_all, runs_to_dicts
 from contextbench.judge import judge_all, judgments_to_dicts
+
+
+def _expand_dirs(paths: list[str], split: str) -> list[tuple]:
+    """Turn --context-dir paths into profile bundles. Auto-splits a Claude home."""
+    bundles: list[tuple] = []
+    for path in paths:
+        mode = split
+        if mode == "auto":
+            mode = "classes" if is_claude_home(path) else "off"
+        classes = discover_classes(path, mode) if mode != "off" else []
+        if not classes:
+            bundles.append((label_for_context_dir(path), path))
+            continue
+        print(
+            f"[cli] {path} split into {len(classes)} classes: "
+            + ", ".join(c.id for c in classes)
+            + " (plus +all for the whole pile). --split off to disable."
+        )
+        bundles.append((label_for_context_dir(path) + "+all", path))
+        for cls in classes:
+            include = tuple(cls.files)
+            if not include and not cls.extra_notes:
+                continue
+            bundles.append(
+                (cls.id, path, include, cls.extra_notes, cls.id, cls.kind)
+            )
+    return bundles
 
 
 def main() -> None:
@@ -46,6 +80,14 @@ def main() -> None:
         default="auto",
         help="auto (CLI unless ANTHROPIC_API_KEY is set), cli, anthropic, openai, xai, omniroute",
     )
+    p.add_argument(
+        "--split",
+        choices=SPLIT_MODES,
+        default="auto",
+        help="auto=split a Claude home (CLAUDE.md/skills/hooks/agents) into classes. "
+        "classes=those four kinds. families=group skills by name prefix. "
+        "skills=one profile per skill dir. off=one blob for the whole dir.",
+    )
     p.add_argument("--no-bare", action="store_true", help="skip the bare (no extra bundle) arm")
     p.add_argument("--smoke", action="store_true", help="first case × first model only")
     p.add_argument("--judge-provider", default=None)
@@ -63,7 +105,7 @@ def main() -> None:
         raise SystemExit(str(e)) from e
 
     if args.context_dir:
-        context_dirs = [(label_for_context_dir(path), path) for path in args.context_dir]
+        context_dirs = _expand_dirs(args.context_dir, args.split)
     else:
         context_dirs = None
 
@@ -113,7 +155,9 @@ def main() -> None:
     print(f"[cli] wrote {judged_path}")
 
     deltas = analyze_deltas(judgments, profiles)
-    board = to_markdown(judgments, deltas)
+    elo = elo_ratings(judgments) if elo_ratings else None
+    delta_ci = bootstrap_delta_ci(judgments, profiles) if bootstrap_delta_ci else None
+    board = to_markdown(judgments, deltas, elo=elo, delta_ci=delta_ci or None)
     board_path = out_dir / f"leaderboard_{ts}.md"
     board_path.write_text(board + "\n")
     print(f"[cli] wrote {board_path}\n\n{board}")

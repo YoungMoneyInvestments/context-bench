@@ -1,35 +1,38 @@
-<p align="center">
-  <img src="docs/assets/logo.svg" width="80" height="80" alt="context-bench: grades your notes — keep, bloat, or remove" />
-</p>
-
 # context-bench
 
-Score whether a `CLAUDE.md` or skill bundle actually helps a model — or just spends tokens.
+Score whether your `CLAUDE.md`, skills, hooks, and agents still help — or which class newer models have outgrown.
 
 ```bash
 pip install -e .
 python3 -m contextbench.cli --context-dir ~/.claude
 ```
 
-Same fixed **Cases** (prompt + rubric). Two **Profiles** per model: `bare` versus `+your-dir`. A separate model **judges** every answer against the rubric and never sees which Profile wrote it. The leaderboard is the delta.
+Pointed at a Claude home, the bench **splits the pile** (`CLAUDE.md` / `skills` / `hooks` / `agents`), scores each class **alone** against bare, and prints a model × class table. Read down a column. If Opus is worse than Haiku on `hooks`, that is the class to delete when you upgrade.
 
 <p align="center">
-  <img src="docs/assets/loop.svg" alt="Case times Profile, then a blind judge, then KEEP, PROMPT_BLOAT, or REMOVE" width="100%" />
+  <a href="https://github.com/YoungMoneyInvestments/context-bench/blob/master/docs/assets/context-bench.mp4">
+    <img src="docs/assets/film-poster.jpg" alt="Watch the 48s film: Boris Cherny, then the bench" width="100%" />
+  </a>
+</p>
+
+[48s film (play on GitHub)](https://github.com/YoungMoneyInvestments/context-bench/blob/master/docs/assets/context-bench.mp4) · [raw mp4](https://github.com/YoungMoneyInvestments/context-bench/raw/master/docs/assets/context-bench.mp4) · [9:16](https://github.com/YoungMoneyInvestments/context-bench/blob/master/docs/assets/context-bench-9x16.mp4)
+
+<p align="center">
+  <img src="docs/assets/loop.svg" alt="Each class of your Claude home is scored alone against bare, across models. Fading means stronger models get less lift." width="100%" />
 </p>
 
 | Call | When |
 |---|---|
-| **KEEP** | Δ ≥ +1.5 — the bundle earns its tokens |
-| **PROMPT_BLOAT** | in between — it barely moved the score |
-| **REMOVE** | Δ ≤ −1.0 — the model got worse with the notes |
+| **KEEP** | Δ ≥ +1.5 — that class earns its tokens |
+| **PROMPT_BLOAT** | in between — barely moved the score |
+| **REMOVE** | Δ ≤ −1.0 — the model got worse with it |
+| **fading** | stronger models get less lift than weaker ones — they need that class less |
 
-Boris Cherny told a YC room to delete `CLAUDE.md`, skills, and hooks every six months and see what the model does. [Nate Herk's video](https://youtu.be/XNQBCRcwXV4) is what made that advice circulate. People have been doing it as a vibe check. This repo is the vibe check with a rubric.
-
-**Film (Boris clip, then the bench):** [`docs/assets/context-bench.mp4`](docs/assets/context-bench.mp4) · vertical [`docs/assets/context-bench-9x16.mp4`](docs/assets/context-bench-9x16.mp4)
+Boris Cherny told a YC room to delete `CLAUDE.md`, skills, and hooks every six months and see what the model does. [Nate Herk's video](https://youtu.be/XNQBCRcwXV4) is what made that advice circulate. A whole-directory delta only tells you the pile is heavy. The class table tells you **which kind** is the weight.
 
 ## Example
 
-A smoke run of the synthetic demo bundle (`examples/context`) against six Cases:
+A smoke run of the synthetic demo bundle (`examples/context`) against six Cases — one blob, no classes, because that folder is not a Claude home:
 
 | Model | Bare | +example | Δ | Call |
 |---|---|---|---|---|
@@ -37,7 +40,9 @@ A smoke run of the synthetic demo bundle (`examples/context`) against six Cases:
 | Sonnet 5 | 8.83 | 9.17 | +0.33 | PROMPT_BLOAT |
 | Opus 5 | 8.17 | 9.00 | +0.83 | PROMPT_BLOAT |
 
-None of those notes cleared KEEP. That is the point of measuring instead of guessing.
+Against `~/.claude` the leaderboard opens with a **class matrix** instead: one row per `claude.md` / `skills` / `hooks` / `agents`, one column per model, a trend when Haiku still wants something Opus does not.
+
+`--split families` groups skills by name prefix (`brokerbridge-*`). `--split skills` is one row per skill directory — expensive, use `--models opus` first.
 
 ## Quickstart
 
@@ -50,24 +55,32 @@ pip install -e .
 # Synthetic demo first
 python3 -m contextbench.cli --smoke
 
-# The run that matters
+# The run that matters — auto-splits a Claude home
 python3 -m contextbench.cli --context-dir ~/.claude
 
+# One class family, one model
+python3 -m contextbench.cli --context-dir ~/.claude --split families --models opus
+
 # One skill at a time
-python3 -m contextbench.cli --context-dir ~/.claude/skills/caveman --models opus
+python3 -m contextbench.cli --context-dir ~/.claude --split skills --models opus
 ```
 
 `export XAI_API_KEY=...` optionally adds Grok (`--models xai:grok-4`).
 
 Writes `results/runs_<ts>.json`, `results/judged_<ts>.json`, and `results/leaderboard_<ts>.md`.
 
-The leaderboard includes mean scores, an **Arena-style Elo** section (pairwise wins from per-case score comparisons), and bootstrap confidence intervals on ablation deltas when skill profiles are present. Elo numbers are **within-run only** — use them to rank profiles in that run, not to compare across machines or sessions (same idea as Chatbot Arena's relative ranking).
+The leaderboard leads with the class matrix, then mean scores, Arena-style Elo (within-run only), and bootstrap CIs on the deltas.
 
 ### Flags
 
 | Flag | What it does |
 |---|---|
 | `--context-dir PATH` | Bundle to test. Repeatable. Default: `examples/context`. |
+| `--split auto` | Default. A Claude home becomes `+all` plus `claude.md` / `skills` / `hooks` / `agents`. |
+| `--split classes` | Force that four-class split. |
+| `--split families` | Skills grouped by shared name prefix. |
+| `--split skills` | One profile per skill directory. |
+| `--split off` | Whole directory as one blob. |
 | `--wrap fair` | Default. Case is the user message; notes are optional system context. |
 | `--wrap system` | Notes as a raw system prompt. |
 | `--wrap raw` | Old `"System Instructions:"` user-turn wrap ([issue #1](https://github.com/YoungMoneyInvestments/context-bench/issues/1)). |
@@ -79,6 +92,8 @@ The leaderboard includes mean scores, an **Arena-style Elo** section (pairwise w
 The judge is a model call, not ground truth. Read a few `results/judged_*.json` reasons before trusting a delta. Ten Cases is a smoke bench, not a statistically powered one. If a Profile swings on 1–2 Cases, that is noise.
 
 **SKILL.md files are not invoked as Claude Code skills.** v1 concatenates markdown into a system prompt. That is the right test for a `CLAUDE.md`. It is the wrong test for a skill that should be called by name. `--wrap fair` stops Opus/Sonnet from treating the dump as a jailbreak ([ADR 0004](./docs/adr/0004-fair-cli-wrapping.md)).
+
+**Hooks that are only code** are inventoried as names, not executed. The class still shows up. A hook that never writes markdown cannot be scored as context — it is scored as "does reminding the model these hooks exist help," which is a weak test and labeled that way.
 
 **`bare` is not zero-context.** `claude -p` still loads your ambient `~/.claude` config on every Profile, including `bare`. The constant cancels out of the delta. Absolute scores are *your* scores ([ADR 0003](./docs/adr/0003-bare-is-relative-to-ambient-config-under-oauth.md)).
 
@@ -99,6 +114,8 @@ rubric:
 ## Why
 
 Anthropic deleted ~80% of Claude Code's own system prompt when Opus 5 shipped. The model got better. Boris's follow-up: do the same thing to *your* stack, on a six-month cadence, then add back only what you watch fail.
+
+A whole-home REMOVE is not actionable. "hooks are fading on Opus, skills still pay on Haiku" is.
 
 Source clips in the film: [Boris at YC Startup School](https://www.youtube.com/watch?v=qyPCVqFUyDo) · [Nate Herk](https://youtu.be/XNQBCRcwXV4). Short attributed excerpts; the rest is this project's explainer.
 

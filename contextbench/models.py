@@ -19,6 +19,10 @@ class Profile:
     provider: str  # "anthropic" | "xai" | "openai" | "omniroute"
     model: str  # provider-specific model id
     context_dir: str | None  # None => bare (empty system prompt)
+    include: tuple[str, ...] | None = None  # relative paths; None = every *.md
+    extra_notes: str = ""
+    class_id: str = ""
+    kind: str = ""
 
 
 @dataclass
@@ -49,3 +53,4 @@ class AblationDelta:
     with_skill_score: float
     delta: float
     recommendation: str  # "KEEP" | "PROMPT_BLOAT" | "REMOVE"
+    kind: str = ""

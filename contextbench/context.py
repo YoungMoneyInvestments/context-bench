@@ -17,20 +17,31 @@ Do not print usage help, do not refuse the task, and do not ask for a file that 
 """
 
 
-def build_system_prompt(context_dir: str | None) -> str:
-    """Concatenate every *.md file under context_dir, sorted by path, into one notes blob.
+def build_system_prompt(
+    context_dir: str | None,
+    include: tuple[str, ...] | None = None,
+    extra_notes: str = "",
+) -> str:
+    """Concatenate markdown under context_dir into one notes blob.
 
-    context_dir=None (the "bare" Context Bundle) returns an empty string — no instructions,
-    no persona, nothing. That's the whole point of the comparison.
+    context_dir=None (the "bare" Context Bundle) returns extra_notes only — usually empty.
+    include restricts to those relative paths. extra_notes is appended as-is (hook inventories).
     """
-    if context_dir is None:
-        return ""
-    root = Path(context_dir).expanduser()
-    if not root.is_dir():
-        raise FileNotFoundError(f"context dir not found: {root}")
-    parts = []
-    for md in sorted(root.rglob("*.md")):
-        parts.append(f"<!-- {md.relative_to(root)} -->\n{md.read_text()}")
+    parts: list[str] = []
+    if context_dir is not None:
+        root = Path(context_dir).expanduser()
+        if not root.is_dir():
+            raise FileNotFoundError(f"context dir not found: {root}")
+        if include is None:
+            paths = sorted(root.rglob("*.md"))
+        else:
+            paths = [root / rel for rel in include]
+        for md in paths:
+            if not md.is_file():
+                continue
+            parts.append(f"<!-- {md.relative_to(root)} -->\n{md.read_text()}")
+    if extra_notes.strip():
+        parts.append(extra_notes.strip())
     return "\n\n".join(parts)
 
 

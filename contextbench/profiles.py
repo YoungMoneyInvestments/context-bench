@@ -21,6 +21,7 @@ MODEL_ALIASES = {
     "claude-haiku-4-5-20251001": ("anthropic", "claude-haiku-4-5-20251001"),
     "grok": ("grok", "grok-4.6"),
     "codex": ("codex", "gpt-5.6-luna"),
+    "cursor": ("cursor", "auto"),
 }
 
 
@@ -50,16 +51,29 @@ def label_for_context_dir(context_dir: str) -> str:
     return path.name or "context"
 
 
+def _normalize_bundle(entry: tuple) -> tuple[str, str, tuple[str, ...] | None, str, str, str]:
+    """Accept (label, path) or the longer class tuple from --split."""
+    if len(entry) == 2:
+        label, path = entry
+        return label, path, None, "", "", ""
+    if len(entry) == 6:
+        label, path, include, extra, class_id, kind = entry
+        return label, path, include, extra, class_id, kind
+    raise ValueError(f"context dir entry must be 2 or 6 fields, got {len(entry)}")
+
+
 def default_profiles(
     *,
-    context_dirs: list[tuple[str, str]] | None = None,
+    context_dirs: list[tuple] | None = None,
     models: list[tuple[str, str]] | None = None,
     provider: str | None = None,
     include_bare: bool = True,
 ) -> list[Profile]:
     """Build the Profile matrix.
 
-    context_dirs: list of (label, path). None → the synthetic examples/context demo.
+    context_dirs: list of (label, path) or
+    (label, path, include, extra_notes, class_id, kind).
+    None → the synthetic examples/context demo.
     provider: "auto" / None uses the CLI harness unless ANTHROPIC_API_KEY is set.
     """
     if models is None:
@@ -85,13 +99,18 @@ def default_profiles(
             profiles.append(
                 Profile(id=f"{model}+bare", provider=effective, model=model, context_dir=None)
             )
-        for label, context_dir in context_dirs:
+        for entry in context_dirs:
+            label, context_dir, include, extra, class_id, kind = _normalize_bundle(entry)
             profiles.append(
                 Profile(
                     id=f"{model}+{label}",
                     provider=effective,
                     model=model,
                     context_dir=context_dir,
+                    include=include,
+                    extra_notes=extra,
+                    class_id=class_id,
+                    kind=kind,
                 )
             )
     return profiles

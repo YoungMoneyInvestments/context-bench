@@ -9,7 +9,11 @@ from contextbench.providers import CALLERS
 
 
 def run_one(case: Case, profile: Profile, wrap: str = "fair") -> Run:
-    notes = build_system_prompt(profile.context_dir)
+    notes = build_system_prompt(
+        profile.context_dir,
+        include=profile.include,
+        extra_notes=profile.extra_notes,
+    )
     system, user = wrap_request(case.prompt, notes, wrap)
     caller = CALLERS[profile.provider]
     start = time.monotonic()

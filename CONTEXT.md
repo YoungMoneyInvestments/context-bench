@@ -58,6 +58,13 @@ A Judge's score (1-10) plus one-sentence reasoning for a single Run. Many Judgme
 roll up into a Leaderboard.
 _Avoid_: Score (Score is a field on a Judgment, not the concept itself)
 
+**Class**:
+A kind of context inside a Claude home, scored *alone* against bare: `claude.md`, `skills`,
+`hooks`, `agents`. `--split families` further groups skills by shared name prefix;
+`--split skills` is one class per skill directory. The class matrix is how you see which
+pile newer models are outgrowing.
+_Avoid_: category (that's a Case field), bundle (a Class is a *slice* of a bundle)
+
 **Leaderboard**:
 The mean Judgment score per Profile, aggregated across all Cases in a run, rendered as a markdown
 table. This is the only artifact meant for humans to read directly — Runs and Judgments are the
