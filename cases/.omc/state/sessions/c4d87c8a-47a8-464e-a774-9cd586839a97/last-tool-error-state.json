@@ -1,7 +1,0 @@
-{
-  "tool_name": "Bash",
-  "tool_input_preview": "{\"command\":\"cd ~/Projects/context-bench && python3 -m venv .venv -q 2>&1 | tail -5; source .venv/bin/activate && pip install -q anthropic openai pyyaml 2>&1 | tail -10 && python3 tests/test_leaderboar...",
-  "error": "Exit code 127\n                          --copies] [--clear] [--upgrade] [--without-pip]\n                          [--prompt PROMPT] [--upgrade-deps]\n                          [--without-scm-ignore-files]\n                          ENV_DIR [ENV_DIR ...]\npython3.14 -m venv: error: unrecognized arguments: -q\n(eval):source:1: no such file or directory: .venv/bin/activate",
-  "timestamp": "2026-08-14T15:49:13.519Z",
-  "retry_count": 1
-}
