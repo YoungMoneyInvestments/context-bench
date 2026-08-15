@@ -10,6 +10,7 @@ from contextbench.ablation import analyze_deltas
 from contextbench.cases import load_cases
 from contextbench.classes import SPLIT_MODES, discover_classes, is_claude_home
 from contextbench.context import WRAP_MODES, bundle_skill_files
+from contextbench.dashboard import write_dashboard
 from contextbench.leaderboard import to_markdown
 
 try:
@@ -168,11 +169,29 @@ def main() -> None:
 
     expected = len(cases) * len(profiles)
     failed = [r for r in runs if r.error]
+    homes = args.context_dir or ["examples/context"]
+    dash_kw = dict(
+        out_path=out_dir / "dashboard.html",
+        profiles=profiles,
+        home=homes[0],
+        n_cases=len(cases),
+    )
+
     if len(runs) != expected or failed:
+        missing: list[str] = []
+        have = {(r.case_id, r.profile_id) for r in runs}
+        for case in cases:
+            for profile in profiles:
+                if (case.id, profile.id) not in have:
+                    missing.append(f"{case.id} × {profile.id}")
+        for run in failed:
+            missing.append(f"{run.case_id} × {run.profile_id}: {run.error}")
+        dash = write_dashboard(None, status="incomplete", missing=missing, **dash_kw)
         print(
             f"[cli] incomplete matrix: {len(runs)}/{expected} cells, "
             f"{len(failed)} failed. No KEEP/REMOVE leaderboard."
         )
+        print(f"[cli] wrote {dash}")
         raise SystemExit(2)
 
     if args.no_judge:
@@ -190,7 +209,10 @@ def main() -> None:
     board = to_markdown(judgments, deltas, elo=elo, delta_ci=delta_ci or None)
     board_path = out_dir / f"leaderboard_{ts}.md"
     board_path.write_text(board + "\n")
+    status = "complete" if deltas else "unpaired"
+    dash = write_dashboard(board_path, deltas=deltas, status=status, **dash_kw)
     print(f"[cli] wrote {board_path}\n\n{board}")
+    print(f"[cli] wrote {dash}")
 
 
 if __name__ == "__main__":

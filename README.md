@@ -39,7 +39,7 @@ Read down a column. If a stronger model is worse on `hooks`, that is the class t
 | **REMOVE** | Δ ≤ −1.0 — the model got worse with it |
 | **fading** | stronger models get less lift than weaker ones |
 
-Writes `results/leaderboard_<ts>.md`. The leaderboard opens with a class matrix, then scores, Elo, and CIs. Deltas are paired by case. If any Case × Profile cell fails, the process exits 2 and does not print KEEP/REMOVE.
+Writes `results/dashboard.html` (class × model, painted KEEP / PROMPT_BLOAT / REMOVE) and `results/leaderboard_<ts>.md`. Open the HTML. Deltas are paired by case. If any Case × Profile cell fails, the process exits 2, still writes the dashboard as an incomplete skeleton, and does not print KEEP/REMOVE.
 
 <p align="center">
   <img src="docs/assets/loop.svg" alt="Shape of a class × model table: each class scored alone against bare. Fading means stronger models get less lift." width="100%" />
