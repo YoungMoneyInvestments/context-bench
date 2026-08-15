@@ -36,4 +36,11 @@ Real Claude Code skill invocation is now supported via `--harness auto` (default
 - **`CLAUDE_CONFIG_DIR` isolation is forbidden** for the same reason — it loses OAuth.
 - `--harness notes` preserves the old fair/system/raw wrap for A/B against the slash path.
 
-See `contextbench/providers.py:call_cli_skill_harness` and `contextbench/runner.py`.
+## Update (2026-08-14): isolated wrap, not live slash-invoke
+
+`--safe-mode` is now the baseline for every Claude CLI arm. Live `/{skill}` invoke would
+require ambient skills to be loaded, which re-breaks isolation. The bench therefore wraps
+the selected `SKILL.md` as extra system text under `--safe-mode`. That is a static-prompt
+test, not a claim that the installed skill ran.
+
+See `contextbench/providers.py:call_cli_harness` and `contextbench/runner.py`.

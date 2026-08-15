@@ -3,7 +3,7 @@
 Supports:
 1. Local CLI harness execution (`claude -p`, `codex exec`, `grok --single`, `gemini -p`)
    using your active local OAuth/subscription sessions — no API key needed.
-2. Claude Code skill invocation via slash commands in `claude -p` (`call_cli_skill_harness`).
+2. Isolated Claude CLI calls (`--safe-mode`) so ambient ~/.claude does not load.
 3. Direct API keys (`anthropic`, `openai`, `xai`) if configured.
 4. OmniRoute proxy fallback if explicitly configured.
 
@@ -26,13 +26,20 @@ _NEUTRAL_CWD = tempfile.mkdtemp(prefix="contextbench-cwd-")
 
 
 def _cli_model_flag(model: str) -> list[str]:
-    if "sonnet" in model:
-        return ["--model", "claude-sonnet-5"]
-    if "haiku" in model:
-        return ["--model", "claude-haiku-4-5-20251001"]
-    if "opus" in model:
-        return ["--model", "claude-opus-5"]
-    return []
+    if not model:
+        return []
+    return ["--model", model]
+
+
+def _private_tempfile(prefix: str, suffix: str, body: str) -> str:
+    fd, path = tempfile.mkstemp(prefix=prefix, suffix=suffix)
+    with os.fdopen(fd, "w") as handle:
+        handle.write(body)
+    try:
+        os.chmod(path, 0o600)
+    except OSError:
+        pass
+    return path
 
 
 def call_cli_harness(
@@ -40,21 +47,16 @@ def call_cli_harness(
 ) -> tuple[str, int, int]:
     """Execute via the local `claude -p` CLI using the active OAuth subscription.
 
-    Context notes go through `--system-prompt-file` (real system role), not concatenated
-    into the user turn as "System Instructions:". That old wrapping made Opus/Sonnet
-    treat SKILL.md dumps as injection or help-text (issue #1).
-
-    Pass ``disable_slash=True`` on bare baseline runs when skill profiles are in the
-    same session so slash commands do not activate during comparison.
+    `--safe-mode` keeps OAuth and disables ambient CLAUDE.md / skills / hooks / MCP
+    so bare is actually empty of operator customizations. Treatment text is attached
+    only through `--system-prompt-file`.
     """
     sys_path = None
-    cmd = ["claude", "-p", prompt, *_cli_model_flag(model)]
+    cmd = ["claude", "-p", prompt, "--safe-mode", *_cli_model_flag(model)]
     if disable_slash:
         cmd.append("--disable-slash-commands")
     if system:
-        fd, sys_path = tempfile.mkstemp(prefix="contextbench-sys-", suffix=".txt")
-        with os.fdopen(fd, "w") as handle:
-            handle.write(system)
+        sys_path = _private_tempfile("contextbench-sys-", ".txt", system)
         cmd.extend(["--system-prompt-file", sys_path])
 
     try:
@@ -68,8 +70,15 @@ def call_cli_harness(
     except subprocess.CalledProcessError as e:
         stderr = (e.stderr or "") + (e.stdout or "")
         if sys_path and "system-prompt-file" in stderr.lower():
-            # Older CLI builds only have --system-prompt. Fall back; ARG_MAX is the risk.
-            cmd = ["claude", "-p", prompt, "--system-prompt", system, *_cli_model_flag(model)]
+            cmd = [
+                "claude",
+                "-p",
+                prompt,
+                "--safe-mode",
+                "--system-prompt",
+                system,
+                *_cli_model_flag(model),
+            ]
             if disable_slash:
                 cmd.append("--disable-slash-commands")
             res = subprocess.run(
@@ -79,9 +88,9 @@ def call_cli_harness(
             in_tok = (len(prompt.split()) + len(system.split())) * 2
             out_tok = len(text.split()) * 2
             return text, in_tok, out_tok
-        raise RuntimeError(f"CLI harness execution failed: {e}") from e
+        raise RuntimeError(f"CLI harness execution failed (exit {e.returncode})") from e
     except Exception as e:
-        raise RuntimeError(f"CLI harness execution failed: {e}") from e
+        raise RuntimeError("CLI harness execution failed") from e
     finally:
         if sys_path:
             try:
@@ -234,7 +243,7 @@ def call_gemini_cli(model: str, system: str, prompt: str) -> tuple[str, int, int
     if use_gmi:
         cmd = ["gmi", "--model", model, full_prompt]
     else:
-        cmd = ["gemini", "-p", full_prompt, "--approval-mode", "yolo", "-m", model]
+        cmd = ["gemini", "-p", full_prompt, "-m", model]
     try:
         res = subprocess.run(
             cmd, capture_output=True, text=True, timeout=180, check=True, cwd=_NEUTRAL_CWD
@@ -310,7 +319,7 @@ def call_omniroute(model: str, system: str, prompt: str) -> tuple[str, int, int]
 def call_anthropic(model: str, system: str, prompt: str) -> tuple[str, int, int]:
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
-        return call_cli_harness(model, system, prompt)
+        raise RuntimeError("anthropic provider requires ANTHROPIC_API_KEY; use --provider cli")
 
     import anthropic
 
@@ -328,7 +337,7 @@ def call_anthropic(model: str, system: str, prompt: str) -> tuple[str, int, int]
 def call_xai(model: str, system: str, prompt: str) -> tuple[str, int, int]:
     api_key = os.environ.get("XAI_API_KEY")
     if not api_key:
-        return call_cli_harness(model, system, prompt)
+        raise RuntimeError("xai provider requires XAI_API_KEY; it does not fall back to Claude")
 
     return _call_openai_compatible(
         base_url="https://api.x.ai/v1",
@@ -342,7 +351,7 @@ def call_xai(model: str, system: str, prompt: str) -> tuple[str, int, int]:
 def call_openai(model: str, system: str, prompt: str) -> tuple[str, int, int]:
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
-        return call_cli_harness(model, system, prompt)
+        raise RuntimeError("openai provider requires OPENAI_API_KEY; it does not fall back to Claude")
 
     return _call_openai_compatible(
         base_url="https://api.openai.com/v1",

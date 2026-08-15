@@ -2,17 +2,19 @@
 
 ## Open
 
-- [ ] Hooks with no markdown are name-inventories only; executing hooks is future work
-- [ ] Direct xAI/OpenAI API key path still broken on account side — CLI OAuth workaround is the supported path (issue #3)
+- [ ] Public history rewrite, issue-comment wipe, and film/Pages replacement are one-way doors. Working tree is sanitized; refs and media history are not.
+- [ ] Live isolation canary: marker only in ambient config must be absent from bare and present once in treatment (`claude --safe-mode`)
+- [ ] Resume/checkpoint + dry-run usage estimate (CB-08)
+- [ ] Third-party film clip rights review (CB-09)
 
-## Done 2026-08-14
+## Done
 
-- [x] Arena-style Elo + bootstrap CI on leaderboard
-- [x] Cases 07–10 (review/boundary/plan/ambiguity)
-- [x] cursor-agent provider (`--models cursor`) via subscription OAuth
-- [x] Gemini via `gmi` subscription wrapper (`--models gemini`)
-- [x] Real skill-invocation harness (`--harness skill` / auto on SKILL.md dirs) — issue #1
-- [x] Judge parser tolerates truncated / score-only JSON
-- [x] ADR 0002 note: CLI OAuth preferred; OmniRoute optional
-- [x] Multi-model full run → `results/leaderboard_20260814T224037Z.md`
-- [x] Skill smoke (caveman × haiku) → `results/leaderboard_20260814T230358Z.md`
+- [x] Offline `--demo` + dashboard
+- [x] Helps / No lift / Hurts wording
+- [x] loop.svg redrawn as with-vs-without
+- [x] Package discovery + bundled cases/examples
+- [x] Isolated `--safe-mode` wrap; no ambient cancel-out claim
+- [x] Fail-closed paired matrix; no verdict on missing cells
+- [x] auto never switches to billed API from an ambient key
+- [x] `--split skills` points at the skill directory
+- [x] Symlink containment; no Gemini yolo; 0600 result files

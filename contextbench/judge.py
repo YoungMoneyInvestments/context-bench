@@ -78,6 +78,8 @@ def judge_all(
 ) -> list[Judgment]:
     judgments = []
     for run in runs:
+        if run.error:
+            continue
         case = cases_by_id[run.case_id]
         if verbose:
             print(f"[judge] {run.case_id} x {run.profile_id}")

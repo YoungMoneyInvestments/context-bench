@@ -17,6 +17,14 @@ Do not print usage help, do not refuse the task, and do not ask for a file that 
 """
 
 
+def _is_inside(path: Path, root: Path) -> bool:
+    try:
+        path.resolve().relative_to(root.resolve())
+        return True
+    except ValueError:
+        return False
+
+
 def build_system_prompt(
     context_dir: str | None,
     include: tuple[str, ...] | None = None,
@@ -26,10 +34,11 @@ def build_system_prompt(
 
     context_dir=None (the "bare" Context Bundle) returns extra_notes only — usually empty.
     include restricts to those relative paths. extra_notes is appended as-is (hook inventories).
+    Paths that resolve outside the selected root (symlinks included) are rejected.
     """
     parts: list[str] = []
     if context_dir is not None:
-        root = Path(context_dir).expanduser()
+        root = Path(context_dir).expanduser().resolve()
         if not root.is_dir():
             raise FileNotFoundError(f"context dir not found: {root}")
         if include is None:
@@ -37,9 +46,15 @@ def build_system_prompt(
         else:
             paths = [root / rel for rel in include]
         for md in paths:
-            if not md.is_file():
+            if not md.is_file() and not md.is_symlink():
                 continue
-            parts.append(f"<!-- {md.relative_to(root)} -->\n{md.read_text()}")
+            resolved = md.resolve()
+            if not _is_inside(resolved, root):
+                raise ValueError(f"refusing path outside context dir: {md}")
+            if not resolved.is_file():
+                continue
+            rel = resolved.relative_to(root)
+            parts.append(f"<!-- {rel} -->\n{resolved.read_text()}")
     if extra_notes.strip():
         parts.append(extra_notes.strip())
     return "\n\n".join(parts)
@@ -58,8 +73,8 @@ def bundle_skill_files(context_dir: str | None) -> list[str]:
 def detect_skill_name(context_dir: str) -> str | None:
     """Return the skill name if context_dir is a Claude Code skill directory.
 
-    A skill dir has SKILL.md at its root (e.g. ``~/.claude/skills/caveman/SKILL.md``).
-    The skill name is the directory basename (``caveman``).
+    A skill dir has SKILL.md at its root (e.g. ``~/.claude/skills/example-skill/SKILL.md``).
+    The skill name is the directory basename (``example-skill``).
     """
     root = Path(context_dir).expanduser()
     if not root.is_dir():

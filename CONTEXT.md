@@ -34,14 +34,10 @@ _Avoid_: Skill, CLAUDE.md (those are *inputs* a user points a Context Bundle at,
 itself)
 
 **Ambient Config**:
-Whatever CLAUDE.md/skills/hooks/MCP config the person running the benchmark already has active
-in their own Claude Code install. Under OAuth (the CLI-harness Provider), Ambient Config loads on
-every Run regardless of Context Bundle — there is no flag that disables it without also disabling
-OAuth. It's a constant across every Profile in one benchmark session, so it cancels out of the
-Delta between `bare` and a real Context Bundle, but it means the Leaderboard's absolute scores are
-one operator's scores, not a universal number. See [ADR 0003](./docs/adr/0003-bare-is-relative-to-ambient-config-under-oauth.md).
-_Avoid_: Environment, setup (too vague — this is specifically the auto-loaded CLAUDE.md/skill/hook
-layer, not general machine state)
+Whatever CLAUDE.md/skills/hooks/MCP config the person running the benchmark already has in
+their own Claude Code install. Claude CLI arms pass `--safe-mode` so Ambient Config does **not**
+load. See [ADR 0003](./docs/adr/0003-bare-is-relative-to-ambient-config-under-oauth.md).
+_Avoid_: Environment, setup
 
 **Run**:
 The recorded result of executing one Case under one Profile once: raw output text, latency,

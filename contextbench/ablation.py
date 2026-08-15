@@ -21,47 +21,48 @@ def verdict_for_delta(delta: float) -> str:
 
 
 def analyze_deltas(judgments: list[Judgment], profiles: list[Profile]) -> list[AblationDelta]:
-    """Calculates interference delta (Score_with_skill - Score_bare) per model and skill."""
-    from collections import defaultdict
-
-    scores_by_profile: dict[str, list[int]] = defaultdict(list)
+    """Paired per-case delta. No verdict unless every case has both arms."""
+    by_cell: dict[tuple[str, str], int] = {}
     for j in judgments:
         if j.score > 0:
-            scores_by_profile[j.profile_id].append(j.score)
+            by_cell[(j.case_id, j.profile_id)] = j.score
 
-    profile_map = {p.id: p for p in profiles}
-    deltas: list[AblationDelta] = []
+    case_ids = sorted({j.case_id for j in judgments})
+    if not case_ids:
+        return []
 
-    # Find bare profiles vs skill profiles
     bare_profiles = {p.model: p for p in profiles if p.context_dir is None}
     skill_profiles = [p for p in profiles if p.context_dir is not None]
+    deltas: list[AblationDelta] = []
 
     for sp in skill_profiles:
-        model = sp.model
-        bare_p = bare_profiles.get(model)
+        bare_p = bare_profiles.get(sp.model)
         if not bare_p:
             continue
-
-        bare_scores = scores_by_profile.get(bare_p.id, [])
-        skill_scores = scores_by_profile.get(sp.id, [])
-
-        if not bare_scores or not skill_scores:
+        pairs: list[tuple[int, int]] = []
+        for case_id in case_ids:
+            bare_score = by_cell.get((case_id, bare_p.id))
+            with_score = by_cell.get((case_id, sp.id))
+            if bare_score is None or with_score is None:
+                pairs = []
+                break
+            pairs.append((bare_score, with_score))
+        if len(pairs) != len(case_ids):
             continue
-
-        bare_mean = sum(bare_scores) / len(bare_scores)
-        skill_mean = sum(skill_scores) / len(skill_scores)
+        bare_mean = sum(b for b, _ in pairs) / len(pairs)
+        skill_mean = sum(s for _, s in pairs) / len(pairs)
         delta = round(skill_mean - bare_mean, 2)
-
         skill_name = sp.class_id or (Path(sp.context_dir).name if sp.context_dir else sp.id)
         deltas.append(
             AblationDelta(
-                model=model,
+                model=sp.model,
                 skill_name=skill_name,
                 bare_score=round(bare_mean, 2),
                 with_skill_score=round(skill_mean, 2),
                 delta=delta,
                 recommendation=verdict_for_delta(delta),
                 kind=sp.kind,
+                paired_n=len(pairs),
             )
         )
 

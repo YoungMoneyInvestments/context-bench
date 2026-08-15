@@ -39,6 +39,19 @@ def test_analyze_deltas_marks_hurts_when_context_lowers_score():
     assert len(deltas) == 1
     assert deltas[0].recommendation == VERDICT_HURTS
     assert deltas[0].delta == -3.0
+    assert deltas[0].paired_n == 2
+
+
+def test_analyze_deltas_refuses_unpaired_cases():
+    profiles = [
+        Profile("claude-opus-5+bare", "anthropic", "claude-opus-5", None),
+        Profile("claude-opus-5+example", "anthropic", "claude-opus-5", "examples/context"),
+    ]
+    judgments = [
+        Judgment("caseA", "claude-opus-5+bare", 1, "only bare", "judge"),
+        Judgment("caseB", "claude-opus-5+example", 10, "only treated", "judge"),
+    ]
+    assert analyze_deltas(judgments, profiles) == []
 
 
 def test_verdict_for_delta_uses_plain_language():

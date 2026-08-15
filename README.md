@@ -70,8 +70,8 @@ python3 -m contextbench.cli --smoke
 # One class family, one model
 python3 -m contextbench.cli --context-dir ~/.claude --split families --models opus
 
-# One skill at a time (slash-invokes the real skill — not a SKILL.md dump)
-python3 -m contextbench.cli --context-dir ~/.claude/skills/caveman --harness skill --models haiku
+# One skill directory at a time (isolated wrap of that SKILL.md, not a live slash invoke)
+python3 -m contextbench.cli --context-dir ~/.claude/skills/example-skill --yes --models haiku
 
 # Subscription CLIs, no API keys
 python3 -m contextbench.cli --models sonnet,haiku,grok,codex,cursor,gemini --smoke
@@ -90,9 +90,10 @@ python3 -m contextbench.cli --models sonnet,haiku,grok,codex,cursor,gemini --smo
 | `--wrap fair` | Default. Case is the user message; skills and hooks are optional system context. |
 | `--wrap system` | Skills and hooks as a raw system prompt. |
 | `--wrap raw` | Old `"System Instructions:"` user-turn wrap ([issue #1](https://github.com/YoungMoneyInvestments/context-bench/issues/1)). |
-| `--harness auto` | Default. Skill dirs (`SKILL.md`) use slash-invoke; prose dirs use wrap. |
-| `--harness skill` | Force slash-invoke (`claude -p /skillname`). Bare arm gets `--disable-slash-commands`. |
-| `--harness notes` | Always dump markdown as extra system text (old behavior). |
+| `--harness auto` | Isolated wrap. Selected markdown is extra system text under `--safe-mode`. |
+| `--harness skill` | Require a `SKILL.md` directory. Still a text wrap, not a live slash invoke. |
+| `--harness notes` | Same isolated wrap (explicit). |
+| `--yes` | Send a non-example `--context-dir` without prompting. |
 | `--models opus,sonnet,haiku` | Also: `grok`, `codex`, `cursor`, `gemini`, or `provider:model-id`. |
 | `--demo` | Offline mock run. No OAuth, no API keys, no network. Writes `results/dashboard.html`. |
 | `--smoke` | First Case × first model. Use this before a 6×3×N burn. |
@@ -101,11 +102,11 @@ python3 -m contextbench.cli --models sonnet,haiku,grok,codex,cursor,gemini --smo
 
 The judge is a model call, not ground truth. Read a few `results/judged_*.json` reasons before trusting a delta. Ten Cases is a smoke bench, not a statistically powered one. If a Profile swings on 1–2 Cases, that is noise.
 
-**Skill dirs use real Claude Code slash-invoke by default** (`--harness auto` / `--harness skill`): `claude -p /skillname` with the Case as the rest of the prompt ([ADR 0004](./docs/adr/0004-fair-cli-wrapping.md)). Prose bundles (`CLAUDE.md`, `examples/context`) still wrap as system context. `--harness notes` forces the old dump.
+**This bench wraps selected files as extra system text.** It does not execute hooks or live-invoke an installed skill. Claude CLI arms pass `--safe-mode` so ambient `~/.claude` is not loaded ([ADR 0003](./docs/adr/0003-bare-is-relative-to-ambient-config-under-oauth.md)).
 
-**Hooks that are only code** are inventoried as names, not executed. The class still shows up. A hook that never writes markdown cannot be scored as context — it is scored as "does reminding the model these hooks exist help," which is a weak test and labeled that way.
+**Hooks that are only code** are inventoried as names, not executed. The class still shows up as "does reminding the model these hook files exist help," which is a weak test and labeled that way.
 
-**`bare` is not zero-context.** `claude -p` still loads your ambient `~/.claude` config on every Profile, including `bare`. The constant cancels out of the delta. Absolute scores are *your* scores ([ADR 0003](./docs/adr/0003-bare-is-relative-to-ambient-config-under-oauth.md)).
+**`bare` is the isolated baseline:** `--safe-mode` and no extra bundle. Treatment arms add only the selected markdown. An incomplete Case × Profile matrix exits nonzero and does not print Helps / No lift / Hurts.
 
 Vocabulary: [`CONTEXT.md`](./CONTEXT.md).
 

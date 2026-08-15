@@ -46,7 +46,7 @@ def test_resolve_models_aliases():
 
 def test_label_for_context_dir_uses_basename():
     assert label_for_context_dir("examples/context") == "context"
-    assert label_for_context_dir("~/.claude/skills/caveman") == "caveman"
+    assert label_for_context_dir("~/.claude/skills/example-skill") == "example-skill"
 
 
 def test_default_profiles_include_bare_and_named_bundle():
@@ -72,10 +72,10 @@ def test_bundle_skill_files_finds_skill_md():
 
 def test_detect_skill_name_returns_dir_basename():
     with tempfile.TemporaryDirectory() as raw:
-        tmp_path = Path(raw) / "caveman"
+        tmp_path = Path(raw) / "example-skill"
         tmp_path.mkdir()
-        (tmp_path / "SKILL.md").write_text("# caveman skill")
-        assert detect_skill_name(str(tmp_path)) == "caveman"
+        (tmp_path / "SKILL.md").write_text("# example skill")
+        assert detect_skill_name(str(tmp_path)) == "example-skill"
 
 
 def test_detect_skill_name_missing_skill_md():
@@ -83,22 +83,33 @@ def test_detect_skill_name_missing_skill_md():
         assert detect_skill_name(raw) is None
 
 
-def test_default_profiles_skill_harness_auto_sets_skill_name():
+def test_default_profiles_auto_does_not_slash_invoke():
     with tempfile.TemporaryDirectory() as raw:
-        skill_dir = Path(raw) / "caveman"
+        skill_dir = Path(raw) / "example-skill"
         skill_dir.mkdir()
         (skill_dir / "SKILL.md").write_text("# skill")
         profiles = default_profiles(
-            context_dirs=[("caveman", str(skill_dir))],
+            context_dirs=[("example-skill", str(skill_dir))],
             models=[("anthropic", "claude-opus-5")],
             provider="cli",
             include_bare=True,
             harness="auto",
         )
     skill_profile = next(p for p in profiles if p.context_dir)
-    assert skill_profile.skill_name == "caveman"
+    assert skill_profile.skill_name == ""
     bare = next(p for p in profiles if p.context_dir is None)
     assert bare.skill_name == ""
+
+
+def test_auto_provider_ignores_anthropic_api_key(monkeypatch):
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-test-not-used")
+    profiles = default_profiles(
+        context_dirs=[("demo", "examples/context")],
+        models=[("anthropic", "claude-opus-5")],
+        provider="auto",
+        include_bare=True,
+    )
+    assert all(profile.provider == "cli" for profile in profiles)
 
 
 def test_default_profiles_harness_skill_rejects_non_skill_dir():

@@ -1,7 +1,7 @@
 """Split a Claude home into classes: claude.md, skills, hooks, agents.
 
 A user with a pile of skills does not want one delta for the whole pile.
-They want to know which *kind* of context still earns tokens — and which
+They want to know which *kind* of extra context still helps — and which
 kinds newer models have outgrown.
 """
 from __future__ import annotations
@@ -37,7 +37,7 @@ def is_claude_home(root: str | Path) -> bool:
 
 
 def skill_family(name: str, names: list[str]) -> str:
-    """Group brokerbridge-audit + brokerbridge-debug → skills/brokerbridge.
+    """Group lint-audit + lint-debug → skills/lint.
 
     A prefix only groups when at least two skill dirs share it.
     """

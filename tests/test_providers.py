@@ -67,7 +67,7 @@ def test_call_cli_skill_harness_uses_slash_invoke_not_system_file():
             "claude-haiku-4-5-20251001",
             "ignore these notes",
             "Task: pong",
-            skill_name="caveman",
+            skill_name="example-skill",
         )
 
     assert text == "pong"
@@ -78,13 +78,25 @@ def test_call_cli_skill_harness_uses_slash_invoke_not_system_file():
     cmd, kwargs = mock_run.call_args[0][0], mock_run.call_args[1]
     assert cmd[0] == "claude"
     assert cmd[1] == "-p"
-    assert "/caveman" in cmd[2]
+    assert "/example-skill" in cmd[2]
     assert "Task: pong" in cmd[2]
     assert "--system-prompt-file" not in cmd
     assert "--system-prompt" not in cmd
     assert "ignore these notes" in cmd[2]
     assert kwargs["timeout"] == 180
     assert kwargs["check"] is True
+
+
+def test_call_cli_harness_uses_safe_mode():
+    mock_result = MagicMock()
+    mock_result.stdout = "ok"
+    with patch("contextbench.providers.subprocess.run", return_value=mock_result) as mock_run:
+        call_cli_harness("claude-opus-5", "", "task only")
+
+    cmd = mock_run.call_args[0][0]
+    assert cmd[0] == "claude"
+    assert "--safe-mode" in cmd
+    assert "--model" in cmd and cmd[cmd.index("--model") + 1] == "claude-opus-5"
 
 
 def test_call_cli_harness_disable_slash_flag():
@@ -128,7 +140,7 @@ def test_call_gemini_cli_falls_back_to_gemini_binary():
     cmd = mock_run.call_args[0][0]
     assert cmd[0] == "gemini"
     assert "-p" in cmd
-    assert "--approval-mode" in cmd and cmd[cmd.index("--approval-mode") + 1] == "yolo"
+    assert "--approval-mode" not in cmd
     assert "-y" not in cmd
 
 

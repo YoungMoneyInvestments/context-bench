@@ -164,14 +164,15 @@ def to_markdown(
         if delta_ci:
             header = (
                 "| Model | Extra context | Without it | With it | Change | "
-                "CI low | CI high | What it did |"
+                "Paired cases | CI low | CI high | What it did |"
             )
-            separator = "|---|---|---|---|---|---|---|---|"
+            separator = "|---|---|---|---|---|---|---|---|---|"
         else:
             header = (
-                "| Model | Extra context | Without it | With it | Change | What it did |"
+                "| Model | Extra context | Without it | With it | Change | "
+                "Paired cases | What it did |"
             )
-            separator = "|---|---|---|---|---|---|"
+            separator = "|---|---|---|---|---|---|---|"
 
         lines.extend([
             "",
@@ -185,13 +186,13 @@ def to_markdown(
             if ci:
                 lines.append(
                     f"| `{d.model}` | `{d.skill_name}` | {d.bare_score} | {d.with_skill_score} | "
-                    f"{d.delta:+.2f} | {ci['ci_low']:+.2f} | {ci['ci_high']:+.2f} | "
+                    f"{d.delta:+.2f} | {d.paired_n} | {ci['ci_low']:+.2f} | {ci['ci_high']:+.2f} | "
                     f"**{d.recommendation}** |"
                 )
             else:
                 lines.append(
                     f"| `{d.model}` | `{d.skill_name}` | {d.bare_score} | {d.with_skill_score} | "
-                    f"{d.delta:+.2f} | **{d.recommendation}** |"
+                    f"{d.delta:+.2f} | {d.paired_n} | **{d.recommendation}** |"
                 )
         lines.extend([
             "",

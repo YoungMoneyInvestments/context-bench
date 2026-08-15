@@ -1,7 +1,6 @@
 """Profile matrix: each Model crossed with bare plus one or more Context Bundles."""
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 from contextbench.models import Profile
@@ -78,28 +77,27 @@ def default_profiles(
     context_dirs: list of (label, path) or
     (label, path, include, extra_notes, class_id, kind).
     None → the synthetic examples/context demo.
-    provider: "auto" / None uses the CLI harness unless ANTHROPIC_API_KEY is set.
-    harness: auto=skill dirs use slash invoke; notes=always system-prompt wrap;
-    skill=require skill dirs with SKILL.md.
+    provider: "auto" / None always uses the subscription CLI for Anthropic aliases.
+    Billed API providers must be requested explicitly.
+    harness: notes wrap under isolated CLI flags. skill=require a SKILL.md dir
+    (still wrapped as text, not a live slash invoke).
     """
     if harness not in HARNESS_MODES:
         raise ValueError(f"unknown harness mode: {harness}")
     if models is None:
         models = list(_MODELS)
     if context_dirs is None:
-        context_dirs = [("example", "examples/context")]
+        from contextbench.paths import resolve_example_dir
 
-    # "auto" only forces the free Claude-OAuth harness for *anthropic*-sourced models when
-    # no ANTHROPIC_API_KEY is set. Explicit non-anthropic tokens (xai:, openai:, grok:,
-    # codex:) always route to their own caller — they have their own auth, and forcing
-    # them through `claude -p` used to silently run them as Claude calls (bug, fixed here).
+        context_dirs = [("example", str(resolve_example_dir()))]
+
     explicit_provider = provider if provider not in (None, "auto") else None
 
     profiles: list[Profile] = []
     for src_provider, model in models:
         if explicit_provider:
             effective = explicit_provider
-        elif src_provider == "anthropic" and not os.environ.get("ANTHROPIC_API_KEY"):
+        elif src_provider == "anthropic":
             effective = "cli"
         else:
             effective = src_provider
@@ -109,17 +107,14 @@ def default_profiles(
             )
         for entry in context_dirs:
             label, context_dir, include, extra, class_id, kind = _normalize_bundle(entry)
-            skill_name = ""
-            if harness != "notes":
+            if harness == "skill":
                 from contextbench.context import detect_skill_name
 
-                detected = detect_skill_name(context_dir)
-                if harness == "skill" and not detected:
+                if not detect_skill_name(context_dir):
                     raise ValueError(
                         f"--harness skill requires a skill dir with SKILL.md at its root: "
                         f"{context_dir}"
                     )
-                skill_name = detected or ""
             profiles.append(
                 Profile(
                     id=f"{model}+{label}",
@@ -130,7 +125,6 @@ def default_profiles(
                     extra_notes=extra,
                     class_id=class_id,
                     kind=kind,
-                    skill_name=skill_name,
                 )
             )
     return profiles

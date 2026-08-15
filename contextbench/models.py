@@ -23,7 +23,7 @@ class Profile:
     extra_notes: str = ""
     class_id: str = ""
     kind: str = ""
-    skill_name: str = ""  # non-empty => slash-invoke via claude -p /{skill_name}
+    skill_name: str = ""  # unused by the isolated wrap path; kept for older profiles
 
 
 @dataclass
@@ -35,6 +35,7 @@ class Run:
     input_tokens: int
     output_tokens: int
     timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    error: str = ""
 
 
 @dataclass
@@ -55,3 +56,4 @@ class AblationDelta:
     delta: float
     recommendation: str  # "Helps" | "No lift" | "Hurts"
     kind: str = ""
+    paired_n: int = 0

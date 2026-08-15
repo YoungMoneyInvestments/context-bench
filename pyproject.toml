@@ -18,3 +18,10 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["contextbench*"]
+exclude = ["cases*", "results*", "tests*", "examples*"]
+
+[tool.setuptools.package-data]
+contextbench = [
+    "bundled/cases/*.yaml",
+    "bundled/examples/context/*.md",
+]

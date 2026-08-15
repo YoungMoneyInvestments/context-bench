@@ -1,30 +1,11 @@
 from __future__ import annotations
 
-import os
 import time
 from dataclasses import asdict
 
 from contextbench.context import build_system_prompt, wrap_request
 from contextbench.models import Case, Profile, Run
-from contextbench.providers import CALLERS, call_cli_harness, call_cli_skill_harness
-
-
-def _uses_cli_skill_harness(profile: Profile) -> bool:
-    if not profile.skill_name:
-        return False
-    if profile.provider == "cli":
-        return True
-    return profile.provider == "anthropic" and not os.environ.get("ANTHROPIC_API_KEY")
-
-
-def _bare_cli_baseline(profile: Profile, disable_slash_baseline: bool) -> bool:
-    return (
-        disable_slash_baseline
-        and profile.context_dir is None
-        and (profile.provider == "cli" or (
-            profile.provider == "anthropic" and not os.environ.get("ANTHROPIC_API_KEY")
-        ))
-    )
+from contextbench.providers import CALLERS
 
 
 def run_one(
@@ -34,30 +15,18 @@ def run_one(
     *,
     disable_slash_baseline: bool = False,
 ) -> Run:
+    del disable_slash_baseline  # isolated wrap path; --safe-mode is on the CLI caller
     start = time.monotonic()
-
-    if _uses_cli_skill_harness(profile):
-        text, in_tok, out_tok = call_cli_skill_harness(
-            profile.model,
-            system="",
-            prompt=case.prompt,
-            skill_name=profile.skill_name,
-        )
-    else:
-        notes = build_system_prompt(
-            profile.context_dir,
-            include=profile.include,
-            extra_notes=profile.extra_notes,
-        )
-        system, user = wrap_request(case.prompt, notes, wrap)
-        if _bare_cli_baseline(profile, disable_slash_baseline):
-            text, in_tok, out_tok = call_cli_harness(
-                profile.model, system, user, disable_slash=True
-            )
-        else:
-            caller = CALLERS[profile.provider]
-            text, in_tok, out_tok = caller(profile.model, system, user)
-
+    if profile.provider not in CALLERS:
+        raise ValueError(f"unknown provider: {profile.provider}")
+    notes = build_system_prompt(
+        profile.context_dir,
+        include=profile.include,
+        extra_notes=profile.extra_notes,
+    )
+    system, user = wrap_request(case.prompt, notes, wrap)
+    caller = CALLERS[profile.provider]
+    text, in_tok, out_tok = caller(profile.model, system, user)
     latency = time.monotonic() - start
     return Run(
         case_id=case.id,
@@ -79,8 +48,6 @@ def run_all(
 ) -> list[Run]:
     """Sequential on purpose — a benchmark isn't a load test, and sequential runs are easy to
     read logs for. Parallelize later if the case/profile matrix gets big enough to matter."""
-    if disable_slash_baseline is None:
-        disable_slash_baseline = any(p.skill_name for p in profiles)
     runs = []
     for case in cases:
         for profile in profiles:
@@ -92,13 +59,38 @@ def run_all(
                         case,
                         profile,
                         wrap=wrap,
-                        disable_slash_baseline=disable_slash_baseline,
+                        disable_slash_baseline=bool(disable_slash_baseline),
                     )
                 )
-            except Exception as e:  # noqa: BLE001 - one bad profile/case shouldn't kill the run
+            except Exception as exc:  # noqa: BLE001 - record the cell, then fail closed
                 if verbose:
-                    print(f"[run] FAILED {case.id} x {profile.id}: {e}")
+                    print(f"[run] FAILED {case.id} x {profile.id}")
+                runs.append(
+                    Run(
+                        case_id=case.id,
+                        profile_id=profile.id,
+                        output="",
+                        latency_s=0.0,
+                        input_tokens=0,
+                        output_tokens=0,
+                        error=_safe_error(exc),
+                    )
+                )
     return runs
+
+
+def _safe_error(exc: BaseException) -> str:
+    text = f"{type(exc).__name__}: {exc}"
+    return text[:240]
+
+
+def complete_matrix(
+    cases: list[Case], profiles: list[Profile], runs: list[Run]
+) -> tuple[bool, list[str]]:
+    expected = {(case.id, profile.id) for case in cases for profile in profiles}
+    ok = {(run.case_id, run.profile_id) for run in runs if not run.error}
+    missing = sorted(expected - ok)
+    return not missing, [f"{case_id} x {profile_id}" for case_id, profile_id in missing]
 
 
 def runs_to_dicts(runs: list[Run]) -> list[dict]:
