@@ -1,42 +1,64 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="560" viewBox="0 0 1200 560" role="img" aria-label="Your Claude home is split into classes. Each class is scored alone against bare, across models.">
-  <rect width="1200" height="560" fill="#0b0d10"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" role="img" aria-label="Each pile of extra context is tested with the same model twice: with it, and without it. Helps means the model scored better. No lift means almost the same. Hurts means the model scored worse.">
+  <rect width="1200" height="700" fill="#0b0d10"/>
   <g font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Helvetica, Arial, sans-serif">
-    <text x="40" y="42" fill="#e8a54b" font-size="16" letter-spacing="3">WHAT THE BENCH ACTUALLY ANSWERS</text>
-    <text x="40" y="82" fill="#f4f0e6" font-size="28" font-weight="700">Which class still earns tokens — and which models have outgrown it</text>
-    <text x="40" y="116" fill="#9aa3ad" font-size="16">Claude, Codex, Grok — any skills and hooks pile. Each class runs alone against bare.</text>
+    <text x="48" y="44" fill="#e8a54b" font-size="14" letter-spacing="2.5">HOW TO READ THIS</text>
+    <text x="48" y="86" fill="#f4f0e6" font-size="30" font-weight="700">Did the extra context help, or get in the way?</text>
+    <text x="48" y="122" fill="#9aa3ad" font-size="17">Same model, twice: once with that pile attached, once without. The word is what changed.</text>
 
     <!-- header -->
-    <text x="280" y="168" text-anchor="middle" fill="#9aa3ad" font-size="15">Haiku</text>
-    <text x="500" y="168" text-anchor="middle" fill="#9aa3ad" font-size="15">Sonnet</text>
-    <text x="720" y="168" text-anchor="middle" fill="#9aa3ad" font-size="15">Opus</text>
-    <text x="980" y="168" text-anchor="middle" fill="#9aa3ad" font-size="15">What that means</text>
+    <text x="64" y="172" fill="#6b7380" font-size="13" letter-spacing="1">THE PILE</text>
+    <text x="400" y="172" fill="#6b7380" font-size="13" letter-spacing="1">WEAKER MODEL</text>
+    <text x="640" y="172" fill="#6b7380" font-size="13" letter-spacing="1">STRONGER MODEL</text>
+    <text x="880" y="172" fill="#6b7380" font-size="13" letter-spacing="1">WHAT YOU SHOULD DO</text>
 
-    <!-- row claude.md -->
-    <rect x="40" y="186" width="1120" height="72" rx="10" fill="#15181e"/>
-    <text x="60" y="230" fill="#f4f0e6" font-size="20" font-weight="700">CLAUDE.md</text>
-    <text x="280" y="230" text-anchor="middle" fill="#e8a54b" font-size="22">+0.4</text>
-    <text x="500" y="230" text-anchor="middle" fill="#9aa3ad" font-size="22">+0.1</text>
-    <text x="720" y="230" text-anchor="middle" fill="#d94b3d" font-size="22">−0.6</text>
-    <text x="980" y="230" text-anchor="middle" fill="#e8a54b" font-size="16">fading</text>
+    <!-- CLAUDE.md -->
+    <rect x="40" y="188" width="1120" height="88" rx="12" fill="#15181e"/>
+    <text x="64" y="226" fill="#f4f0e6" font-size="20" font-weight="700">Your house rules</text>
+    <text x="64" y="250" fill="#6b7380" font-size="14">CLAUDE.md / AGENTS.md</text>
+    <rect x="384" y="214" width="120" height="36" rx="8" fill="#1c160c" stroke="#6a4a1e"/>
+    <text x="444" y="238" text-anchor="middle" fill="#e8a54b" font-size="16" font-weight="700">No lift</text>
+    <rect x="624" y="214" width="120" height="36" rx="8" fill="#1c1010" stroke="#6a2a28"/>
+    <text x="684" y="238" text-anchor="middle" fill="#d94b3d" font-size="16" font-weight="700">Hurts</text>
+    <text x="880" y="240" fill="#f4f0e6" font-size="16">Drop it when you upgrade</text>
 
-    <!-- row skills -->
-    <rect x="40" y="270" width="1120" height="72" rx="10" fill="#15181e"/>
-    <text x="60" y="314" fill="#f4f0e6" font-size="20" font-weight="700">skills</text>
-    <text x="280" y="314" text-anchor="middle" fill="#7dcea0" font-size="22">+1.6</text>
-    <text x="500" y="314" text-anchor="middle" fill="#e8a54b" font-size="22">+0.5</text>
-    <text x="720" y="314" text-anchor="middle" fill="#9aa3ad" font-size="22">+0.2</text>
-    <text x="980" y="314" text-anchor="middle" fill="#e8a54b" font-size="16">fading</text>
+    <!-- skills -->
+    <rect x="40" y="288" width="1120" height="88" rx="12" fill="#15181e"/>
+    <text x="64" y="326" fill="#f4f0e6" font-size="20" font-weight="700">Your skills</text>
+    <text x="64" y="350" fill="#6b7380" font-size="14">slash commands, playbooks</text>
+    <rect x="384" y="314" width="120" height="36" rx="8" fill="#102018" stroke="#2e5a40"/>
+    <text x="444" y="338" text-anchor="middle" fill="#7dcea0" font-size="16" font-weight="700">Helps</text>
+    <rect x="624" y="314" width="120" height="36" rx="8" fill="#1c160c" stroke="#6a4a1e"/>
+    <text x="684" y="338" text-anchor="middle" fill="#e8a54b" font-size="16" font-weight="700">No lift</text>
+    <text x="880" y="330" fill="#f4f0e6" font-size="16">Leave it for now</text>
+    <text x="880" y="352" fill="#9aa3ad" font-size="14">stronger models need it less</text>
 
-    <!-- row hooks -->
-    <rect x="40" y="354" width="1120" height="72" rx="10" fill="#15181e"/>
-    <text x="60" y="398" fill="#f4f0e6" font-size="20" font-weight="700">hooks</text>
-    <text x="280" y="398" text-anchor="middle" fill="#e8a54b" font-size="22">+0.8</text>
-    <text x="500" y="398" text-anchor="middle" fill="#d94b3d" font-size="22">−0.4</text>
-    <text x="720" y="398" text-anchor="middle" fill="#d94b3d" font-size="22">−1.3</text>
-    <text x="980" y="398" text-anchor="middle" fill="#d94b3d" font-size="16">REMOVE on Opus</text>
+    <!-- hooks -->
+    <rect x="40" y="388" width="1120" height="88" rx="12" fill="#15181e"/>
+    <text x="64" y="426" fill="#f4f0e6" font-size="20" font-weight="700">Your hooks</text>
+    <text x="64" y="450" fill="#6b7380" font-size="14">reminders that fire on every turn</text>
+    <rect x="384" y="414" width="120" height="36" rx="8" fill="#1c160c" stroke="#6a4a1e"/>
+    <text x="444" y="438" text-anchor="middle" fill="#e8a54b" font-size="16" font-weight="700">No lift</text>
+    <rect x="624" y="414" width="120" height="36" rx="8" fill="#1c1010" stroke="#6a2a28"/>
+    <text x="684" y="438" text-anchor="middle" fill="#d94b3d" font-size="16" font-weight="700">Hurts</text>
+    <text x="880" y="440" fill="#f4f0e6" font-size="16">Take this out</text>
 
-    <text x="40" y="468" fill="#6b7380" font-size="14">Numbers in this picture are a layout example, not a run. Your leaderboard is the real table.</text>
-    <text x="40" y="500" fill="#6b7380" font-size="14">KEEP ≥ +1.5 · PROMPT_BLOAT in between · REMOVE ≤ −1.0 · fading = stronger models get less lift</text>
-    <text x="40" y="536" fill="#9aa3ad" font-size="15">A class that helps Haiku and hurts Opus is the one to delete when you upgrade.</text>
+    <!-- key -->
+    <rect x="40" y="500" width="360" height="86" rx="12" fill="#12151a"/>
+    <text x="60" y="528" fill="#7dcea0" font-size="16" font-weight="700">Helps</text>
+    <text x="60" y="552" fill="#9aa3ad" font-size="14">Scored better with it.</text>
+    <text x="60" y="572" fill="#9aa3ad" font-size="14">Leave it.</text>
+
+    <rect x="416" y="500" width="360" height="86" rx="12" fill="#12151a"/>
+    <text x="436" y="528" fill="#e8a54b" font-size="16" font-weight="700">No lift</text>
+    <text x="436" y="552" fill="#9aa3ad" font-size="14">Almost the same either way.</text>
+    <text x="436" y="572" fill="#9aa3ad" font-size="14">Paying tokens for little.</text>
+
+    <rect x="792" y="500" width="368" height="86" rx="12" fill="#12151a"/>
+    <text x="812" y="528" fill="#d94b3d" font-size="16" font-weight="700">Hurts</text>
+    <text x="812" y="552" fill="#9aa3ad" font-size="14">Scored worse with it.</text>
+    <text x="812" y="572" fill="#9aa3ad" font-size="14">Take it out.</text>
+
+    <text x="48" y="628" fill="#6b7380" font-size="14">This picture is a made-up example so you can read the shape. Your real table is the dashboard after a run.</text>
+    <text x="48" y="656" fill="#6b7380" font-size="14">Read left to right: if it helps a weaker model and hurts a stronger one, delete that pile when you upgrade.</text>
   </g>
 </svg>

@@ -37,7 +37,7 @@ def test_paired_delta_uses_shared_cases_only():
     assert len(deltas) == 1
     assert deltas[0].delta == 2.0
     assert deltas[0].n_paired == 1
-    assert deltas[0].recommendation == "KEEP"
+    assert deltas[0].recommendation == "Helps"
 
 
 def test_split_skills_points_at_the_skill_directory():

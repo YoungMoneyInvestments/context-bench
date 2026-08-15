@@ -68,11 +68,19 @@ def _parse_verdict(text: str) -> tuple[int, str]:
     return 0, f"unparseable judge output: {text[:200]!r}"
 
 
-def judge_all(runs: list[Run], cases_by_id: dict[str, Case], judge_provider: str, judge_model: str) -> list[Judgment]:
+def judge_all(
+    runs: list[Run],
+    cases_by_id: dict[str, Case],
+    judge_provider: str,
+    judge_model: str,
+    *,
+    verbose: bool = True,
+) -> list[Judgment]:
     judgments = []
     for run in runs:
         case = cases_by_id[run.case_id]
-        print(f"[judge] {run.case_id} x {run.profile_id}")
+        if verbose:
+            print(f"[judge] {run.case_id} x {run.profile_id}")
         judgments.append(judge_run(run, case, judge_provider, judge_model))
     return judgments
 
