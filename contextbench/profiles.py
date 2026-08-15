@@ -78,7 +78,7 @@ def default_profiles(
     context_dirs: list of (label, path) or
     (label, path, include, extra_notes, class_id, kind).
     None → the synthetic examples/context demo.
-    provider: "auto" / None uses the CLI harness unless ANTHROPIC_API_KEY is set.
+    provider: "auto" / None uses subscription CLIs. Ambient API keys never change that.
     harness: auto=skill dirs use slash invoke; notes=always system-prompt wrap;
     skill=require skill dirs with SKILL.md.
     """
@@ -89,17 +89,13 @@ def default_profiles(
     if context_dirs is None:
         context_dirs = [("example", "examples/context")]
 
-    # "auto" only forces the free Claude-OAuth harness for *anthropic*-sourced models when
-    # no ANTHROPIC_API_KEY is set. Explicit non-anthropic tokens (xai:, openai:, grok:,
-    # codex:) always route to their own caller — they have their own auth, and forcing
-    # them through `claude -p` used to silently run them as Claude calls (bug, fixed here).
     explicit_provider = provider if provider not in (None, "auto") else None
 
     profiles: list[Profile] = []
     for src_provider, model in models:
         if explicit_provider:
             effective = explicit_provider
-        elif src_provider == "anthropic" and not os.environ.get("ANTHROPIC_API_KEY"):
+        elif src_provider == "anthropic":
             effective = "cli"
         else:
             effective = src_provider

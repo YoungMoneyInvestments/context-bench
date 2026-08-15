@@ -37,7 +37,7 @@ def is_claude_home(root: str | Path) -> bool:
 
 
 def skill_family(name: str, names: list[str]) -> str:
-    """Group brokerbridge-audit + brokerbridge-debug → skills/brokerbridge.
+    """Group example-audit + example-debug → skills/example.
 
     A prefix only groups when at least two skill dirs share it.
     """

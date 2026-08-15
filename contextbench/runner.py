@@ -93,8 +93,19 @@ def run_all(
                         disable_slash_baseline=disable_slash_baseline,
                     )
                 )
-            except Exception as e:  # noqa: BLE001 - one bad profile/case shouldn't kill the run
+            except Exception as e:  # record the cell; CLI fail-closes the leaderboard
                 print(f"[run] FAILED {case.id} x {profile.id}: {e}")
+                runs.append(
+                    Run(
+                        case_id=case.id,
+                        profile_id=profile.id,
+                        output="",
+                        latency_s=0.0,
+                        input_tokens=0,
+                        output_tokens=0,
+                        error=f"{type(e).__name__}: {e}",
+                    )
+                )
     return runs
 
 

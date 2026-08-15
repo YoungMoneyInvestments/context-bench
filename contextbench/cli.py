@@ -43,8 +43,14 @@ def _expand_dirs(paths: list[str], split: str) -> list[tuple]:
             include = tuple(cls.files)
             if not include and not cls.extra_notes:
                 continue
+            cls_path = path
+            if mode == "skills" and cls.kind == "skills":
+                skill_dir = Path(path).expanduser() / "skills" / Path(cls.id).name
+                if (skill_dir / "SKILL.md").is_file():
+                    cls_path = str(skill_dir)
+                    include = None
             bundles.append(
-                (cls.id, path, include, cls.extra_notes, cls.id, cls.kind)
+                (cls.id, cls_path, include, cls.extra_notes, cls.id, cls.kind)
             )
     return bundles
 
@@ -85,7 +91,8 @@ def main() -> None:
     p.add_argument(
         "--provider",
         default="auto",
-        help="auto (CLI unless ANTHROPIC_API_KEY is set), cli, anthropic, openai, xai, omniroute",
+        help="auto=subscription CLIs (claude/codex/grok). Never switches to billed API "
+        "because a key is in the environment. Use --provider anthropic/openai/xai for APIs.",
     )
     p.add_argument(
         "--split",
@@ -149,9 +156,7 @@ def main() -> None:
         names = ", ".join(sorted({p.skill_name for p in skill_profiles}))
         print(f"[cli] skill harness active for: {names} (slash invoke via claude -p)")
 
-    judge_provider = args.judge_provider
-    if not judge_provider:
-        judge_provider = "anthropic" if os.environ.get("ANTHROPIC_API_KEY") else "cli"
+    judge_provider = args.judge_provider or "cli"
 
     runs = run_all(cases, profiles, wrap=args.wrap)
     ts = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
@@ -161,7 +166,16 @@ def main() -> None:
     run_path.write_text(json.dumps(runs_to_dicts(runs), indent=2))
     print(f"[cli] wrote {run_path}")
 
-    if args.no_judge or not runs:
+    expected = len(cases) * len(profiles)
+    failed = [r for r in runs if r.error]
+    if len(runs) != expected or failed:
+        print(
+            f"[cli] incomplete matrix: {len(runs)}/{expected} cells, "
+            f"{len(failed)} failed. No KEEP/REMOVE leaderboard."
+        )
+        raise SystemExit(2)
+
+    if args.no_judge:
         return
 
     cases_by_id = {c.id: c for c in cases}

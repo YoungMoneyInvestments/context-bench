@@ -34,7 +34,12 @@ class Run:
     latency_s: float
     input_tokens: int
     output_tokens: int
+    error: str = ""
     timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+
+    @property
+    def ok(self) -> bool:
+        return not self.error
 
 
 @dataclass
@@ -55,3 +60,4 @@ class AblationDelta:
     delta: float
     recommendation: str  # "KEEP" | "PROMPT_BLOAT" | "REMOVE"
     kind: str = ""
+    n_paired: int = 0

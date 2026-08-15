@@ -9,34 +9,36 @@ from contextbench.judge import judge_all
 
 def analyze_deltas(judgments: list[Judgment], profiles: list[Profile]) -> list[AblationDelta]:
     """Calculates interference delta (Score_with_skill - Score_bare) per model and skill."""
-    from collections import defaultdict
-
-    scores_by_profile: dict[str, list[int]] = defaultdict(list)
+    # Pair by case_id. Unpaired arms (bare on case A, treatment on case B) must
+    # not produce a KEEP — that fabricated +9 in the public-release audit.
+    by_case: dict[tuple[str, str], int] = {}
     for j in judgments:
         if j.score > 0:
-            scores_by_profile[j.profile_id].append(j.score)
+            by_case[(j.case_id, j.profile_id)] = j.score
 
-    profile_map = {p.id: p for p in profiles}
     deltas: list[AblationDelta] = []
-
-    # Find bare profiles vs skill profiles
     bare_profiles = {p.model: p for p in profiles if p.context_dir is None}
     skill_profiles = [p for p in profiles if p.context_dir is not None]
 
     for sp in skill_profiles:
-        model = sp.model
-        bare_p = bare_profiles.get(model)
+        bare_p = bare_profiles.get(sp.model)
         if not bare_p:
             continue
 
-        bare_scores = scores_by_profile.get(bare_p.id, [])
-        skill_scores = scores_by_profile.get(sp.id, [])
+        pairs: list[tuple[int, int]] = []
+        case_ids = {cid for (cid, pid) in by_case if pid in (bare_p.id, sp.id)}
+        for cid in case_ids:
+            bare_s = by_case.get((cid, bare_p.id))
+            skill_s = by_case.get((cid, sp.id))
+            if bare_s is None or skill_s is None:
+                continue
+            pairs.append((bare_s, skill_s))
 
-        if not bare_scores or not skill_scores:
+        if not pairs:
             continue
 
-        bare_mean = sum(bare_scores) / len(bare_scores)
-        skill_mean = sum(skill_scores) / len(skill_scores)
+        bare_mean = sum(b for b, _ in pairs) / len(pairs)
+        skill_mean = sum(s for _, s in pairs) / len(pairs)
         delta = round(skill_mean - bare_mean, 2)
 
         if delta >= 1.5:
@@ -49,13 +51,14 @@ def analyze_deltas(judgments: list[Judgment], profiles: list[Profile]) -> list[A
         skill_name = sp.class_id or (Path(sp.context_dir).name if sp.context_dir else sp.id)
         deltas.append(
             AblationDelta(
-                model=model,
+                model=sp.model,
                 skill_name=skill_name,
                 bare_score=round(bare_mean, 2),
                 with_skill_score=round(skill_mean, 2),
                 delta=delta,
                 recommendation=rec,
                 kind=sp.kind,
+                n_paired=len(pairs),
             )
         )
 

@@ -17,12 +17,12 @@ from contextbench.runner import run_one
 
 def _tree(tmp: Path) -> Path:
     (tmp / "CLAUDE.md").write_text("# house rules\n")
-    (tmp / "skills" / "caveman").mkdir(parents=True)
-    (tmp / "skills" / "caveman" / "SKILL.md").write_text("# caveman\n")
-    (tmp / "skills" / "brokerbridge-audit").mkdir(parents=True)
-    (tmp / "skills" / "brokerbridge-audit" / "SKILL.md").write_text("# audit\n")
-    (tmp / "skills" / "brokerbridge-debug").mkdir(parents=True)
-    (tmp / "skills" / "brokerbridge-debug" / "SKILL.md").write_text("# debug\n")
+    (tmp / "skills" / "example-skill").mkdir(parents=True)
+    (tmp / "skills" / "example-skill" / "SKILL.md").write_text("# example-skill\n")
+    (tmp / "skills" / "linting-audit").mkdir(parents=True)
+    (tmp / "skills" / "linting-audit" / "SKILL.md").write_text("# audit\n")
+    (tmp / "skills" / "linting-debug").mkdir(parents=True)
+    (tmp / "skills" / "linting-debug" / "SKILL.md").write_text("# debug\n")
     (tmp / "hooks").mkdir()
     (tmp / "hooks" / "guard.py").write_text("print('hook')\n")
     (tmp / "agents").mkdir()
@@ -45,7 +45,7 @@ def test_discover_classes_splits_claude_home():
         classes = {c.id: c for c in discover_classes(root, "classes")}
         assert set(classes) == {"claude.md", "skills", "hooks", "agents"}
         assert classes["claude.md"].files == ["CLAUDE.md"]
-        assert "skills/caveman/SKILL.md" in classes["skills"].files
+        assert "skills/example-skill/SKILL.md" in classes["skills"].files
         assert classes["hooks"].kind == "hooks"
         assert "guard.py" in classes["hooks"].extra_notes
         assert classes["agents"].files == ["agents/reviewer.md"]
@@ -55,8 +55,8 @@ def test_discover_families_groups_shared_prefixes():
     with tempfile.TemporaryDirectory() as raw:
         root = _tree(Path(raw))
         ids = [c.id for c in discover_classes(root, "families")]
-        assert "skills/brokerbridge" in ids
-        assert "skills/caveman" in ids
+        assert "skills/linting" in ids
+        assert "skills/example-skill" in ids
         assert "claude.md" in ids
 
 
@@ -64,15 +64,15 @@ def test_discover_skills_is_one_class_per_skill_dir():
     with tempfile.TemporaryDirectory() as raw:
         root = _tree(Path(raw))
         ids = [c.id for c in discover_classes(root, "skills")]
-        assert "skills/caveman" in ids
-        assert "skills/brokerbridge-audit" in ids
-        assert "skills/brokerbridge-debug" in ids
+        assert "skills/example-skill" in ids
+        assert "skills/linting-audit" in ids
+        assert "skills/linting-debug" in ids
 
 
 def test_skill_family_needs_two_to_group():
-    names = ["caveman", "brokerbridge-audit", "brokerbridge-debug"]
-    assert skill_family("brokerbridge-audit", names) == "skills/brokerbridge"
-    assert skill_family("caveman", names) == "skills/caveman"
+    names = ["example-skill", "linting-audit", "linting-debug"]
+    assert skill_family("linting-audit", names) == "skills/linting"
+    assert skill_family("example-skill", names) == "skills/example-skill"
 
 
 def test_build_system_prompt_honors_include_and_extra_notes():
@@ -80,7 +80,7 @@ def test_build_system_prompt_honors_include_and_extra_notes():
         root = _tree(Path(raw))
         notes = build_system_prompt(str(root), include=("CLAUDE.md",))
         assert "house rules" in notes
-        assert "caveman" not in notes
+        assert "example-skill" not in notes
         mixed = build_system_prompt(
             str(root),
             include=("CLAUDE.md",),

@@ -46,7 +46,7 @@ def call_cli_harness(
     same session so slash commands do not activate during comparison.
     """
     sys_path = None
-    cmd = ["claude", "-p", prompt, *_cli_model_flag(model)]
+    cmd = ["claude", "-p", prompt, "--safe-mode", *_cli_model_flag(model)]
     if disable_slash:
         cmd.append("--disable-slash-commands")
     if system:
@@ -67,7 +67,7 @@ def call_cli_harness(
         stderr = (e.stderr or "") + (e.stdout or "")
         if sys_path and "system-prompt-file" in stderr.lower():
             # Older CLI builds only have --system-prompt. Fall back; ARG_MAX is the risk.
-            cmd = ["claude", "-p", prompt, "--system-prompt", system, *_cli_model_flag(model)]
+            cmd = ["claude", "-p", prompt, "--safe-mode", "--system-prompt", system, *_cli_model_flag(model)]
             if disable_slash:
                 cmd.append("--disable-slash-commands")
             res = subprocess.run(
@@ -100,6 +100,8 @@ def call_cli_skill_harness(
     user_prompt = f"/{skill_name}\n\n{prompt}"
     if system:
         user_prompt = f"{user_prompt}\n\n{system}"
+    # Slash-invoke cannot run under --safe-mode (that flag disables skills).
+    # These arms are therefore not isolated from other same-named installed skills.
     cmd = ["claude", "-p", user_prompt, *_cli_model_flag(model)]
     try:
         res = subprocess.run(
@@ -232,7 +234,7 @@ def call_gemini_cli(model: str, system: str, prompt: str) -> tuple[str, int, int
     if use_gmi:
         cmd = ["gmi", "--model", model, full_prompt]
     else:
-        cmd = ["gemini", "-p", full_prompt, "--approval-mode", "yolo", "-m", model]
+        cmd = ["gemini", "-p", full_prompt, "--approval-mode", "plan", "-m", model]
     try:
         res = subprocess.run(
             cmd, capture_output=True, text=True, timeout=180, check=True, cwd=_NEUTRAL_CWD
@@ -308,7 +310,10 @@ def call_omniroute(model: str, system: str, prompt: str) -> tuple[str, int, int]
 def call_anthropic(model: str, system: str, prompt: str) -> tuple[str, int, int]:
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
-        return call_cli_harness(model, system, prompt)
+        raise RuntimeError(
+            "ANTHROPIC_API_KEY is not set. Use --provider auto (subscription CLI) "
+            "or export the key for billed API calls."
+        )
 
     import anthropic
 
@@ -326,7 +331,7 @@ def call_anthropic(model: str, system: str, prompt: str) -> tuple[str, int, int]
 def call_xai(model: str, system: str, prompt: str) -> tuple[str, int, int]:
     api_key = os.environ.get("XAI_API_KEY")
     if not api_key:
-        return call_cli_harness(model, system, prompt)
+        raise RuntimeError("XAI_API_KEY is not set. Refusing to silently run this profile as Claude.")
 
     return _call_openai_compatible(
         base_url="https://api.x.ai/v1",
@@ -340,7 +345,7 @@ def call_xai(model: str, system: str, prompt: str) -> tuple[str, int, int]:
 def call_openai(model: str, system: str, prompt: str) -> tuple[str, int, int]:
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
-        return call_cli_harness(model, system, prompt)
+        raise RuntimeError("OPENAI_API_KEY is not set. Refusing to silently run this profile as Claude.")
 
     return _call_openai_compatible(
         base_url="https://api.openai.com/v1",

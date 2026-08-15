@@ -28,7 +28,9 @@ python3 -m contextbench.cli --context-dir ~/.codex
 python3 -m contextbench.cli --context-dir ~/.grok
 ```
 
-On a Claude-style home it auto-splits `CLAUDE.md` / `skills` / `hooks` / `agents`. Read down a column. If a stronger model is worse on `hooks`, that is the class to delete when you upgrade.
+On a Claude-style home it auto-splits `CLAUDE.md` / `skills` / `hooks` / `agents`. Claude arms run with `--safe-mode`, so ambient `~/.claude` is not in the prompt. Each class is injected once on that isolated base. Hooks that are only code are inventoried, not executed. Slash-invoke (`--harness skill`) cannot use `--safe-mode` because that flag disables skills.
+
+Read down a column. If a stronger model is worse on `hooks`, that is the class to delete when you upgrade.
 
 | Call | When |
 |---|---|
@@ -37,7 +39,7 @@ On a Claude-style home it auto-splits `CLAUDE.md` / `skills` / `hooks` / `agents
 | **REMOVE** | Δ ≤ −1.0 — the model got worse with it |
 | **fading** | stronger models get less lift than weaker ones |
 
-Writes `results/leaderboard_<ts>.md`. The leaderboard opens with a class matrix, then scores, Elo, and CIs.
+Writes `results/leaderboard_<ts>.md`. The leaderboard opens with a class matrix, then scores, Elo, and CIs. Deltas are paired by case. If any Case × Profile cell fails, the process exits 2 and does not print KEEP/REMOVE.
 
 <p align="center">
   <img src="docs/assets/loop.svg" alt="Shape of a class × model table: each class scored alone against bare. Fading means stronger models get less lift." width="100%" />
@@ -61,8 +63,8 @@ GitHub’s file viewer will not play this mp4. Watch it here:
 # One class family, one model
 python3 -m contextbench.cli --context-dir ~/.claude --split families --models opus
 
-# One skill at a time (slash-invokes the real skill — not a SKILL.md dump)
-python3 -m contextbench.cli --context-dir ~/.claude/skills/caveman --harness skill --models haiku
+# One skill directory (must contain SKILL.md at its root)
+python3 -m contextbench.cli --context-dir ~/.claude/skills/example-skill --harness skill --models haiku
 
 # Subscription CLIs, no API keys
 python3 -m contextbench.cli --models sonnet,haiku,grok,codex,cursor,gemini --smoke

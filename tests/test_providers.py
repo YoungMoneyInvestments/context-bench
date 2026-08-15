@@ -67,7 +67,7 @@ def test_call_cli_skill_harness_uses_slash_invoke_not_system_file():
             "claude-haiku-4-5-20251001",
             "ignore these notes",
             "Task: pong",
-            skill_name="caveman",
+            skill_name="example-skill",
         )
 
     assert text == "pong"
@@ -78,7 +78,7 @@ def test_call_cli_skill_harness_uses_slash_invoke_not_system_file():
     cmd, kwargs = mock_run.call_args[0][0], mock_run.call_args[1]
     assert cmd[0] == "claude"
     assert cmd[1] == "-p"
-    assert "/caveman" in cmd[2]
+    assert "/example-skill" in cmd[2]
     assert "Task: pong" in cmd[2]
     assert "--system-prompt-file" not in cmd
     assert "--system-prompt" not in cmd
@@ -94,6 +94,7 @@ def test_call_cli_harness_disable_slash_flag():
         call_cli_harness("claude-opus-5", "", "task only", disable_slash=True)
 
     cmd = mock_run.call_args[0][0]
+    assert "--safe-mode" in cmd
     assert "--disable-slash-commands" in cmd
 
 
@@ -128,7 +129,7 @@ def test_call_gemini_cli_falls_back_to_gemini_binary():
     cmd = mock_run.call_args[0][0]
     assert cmd[0] == "gemini"
     assert "-p" in cmd
-    assert "--approval-mode" in cmd and cmd[cmd.index("--approval-mode") + 1] == "yolo"
+    assert "--approval-mode" in cmd and cmd[cmd.index("--approval-mode") + 1] == "plan"
     assert "-y" not in cmd
 
 
