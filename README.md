@@ -55,7 +55,7 @@ That picture is the **shape** of the output, not a scored run. Your table is the
 
 GitHub’s file viewer will not play this mp4. Watch it here:
 
-**[Play the 51s film](https://youngmoneyinvestments.github.io/context-bench/watch.html)** · [16:9 mp4](https://youngmoneyinvestments.github.io/context-bench/assets/context-bench.mp4) · [9:16](https://youngmoneyinvestments.github.io/context-bench/assets/context-bench-9x16.mp4) · [release](https://github.com/YoungMoneyInvestments/context-bench/releases/tag/film)
+**[Play the 51s film](https://youngmoneyinvestments.github.io/context-bench/watch.html)** · [16:9 mp4](https://youngmoneyinvestments.github.io/context-bench/assets/context-bench.mp4) · [release](https://github.com/YoungMoneyInvestments/context-bench/releases/tag/film)
 
 ## More commands
 
