@@ -18,3 +18,9 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
 packages = ["contextbench"]
+
+[tool.setuptools.package-data]
+contextbench = [
+    "bundled/cases/*.yaml",
+    "bundled/examples/context/*.md",
+]

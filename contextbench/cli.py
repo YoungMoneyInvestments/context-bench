@@ -18,12 +18,12 @@ except ImportError:  # Elo shipped in a parallel change; class split must run wi
     bootstrap_delta_ci = None
     elo_ratings = None
 from contextbench.dashboard import write_dashboard
+from contextbench.paths import resolve_example_dir
 from contextbench.profiles import HARNESS_MODES, default_profiles, label_for_context_dir, resolve_models
 from contextbench.runner import run_all, runs_to_dicts
 from contextbench.judge import judge_all, judgments_to_dicts
 
 DEMO_CASE_LIMIT = 3
-DEMO_CONTEXT_DIR = "examples/context"
 DEMO_MODELS = "demo:demo-haiku,demo:demo-sonnet"
 DEMO_PROVIDER = "demo"
 DEMO_JUDGE_MODEL = "demo-judge"
@@ -37,7 +37,7 @@ def _run_demo(args: argparse.Namespace) -> None:
 
     models = resolve_models(DEMO_MODELS)
     profiles = default_profiles(
-        context_dirs=[("example", DEMO_CONTEXT_DIR)],
+        context_dirs=[("example", str(resolve_example_dir()))],
         models=models,
         provider=DEMO_PROVIDER,
         include_bare=True,

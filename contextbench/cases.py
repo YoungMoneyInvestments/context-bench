@@ -5,10 +5,11 @@ from pathlib import Path
 import yaml
 
 from contextbench.models import Case
+from contextbench.paths import resolve_cases_dir
 
 
 def load_cases(cases_dir: str = "cases") -> list[Case]:
-    root = Path(cases_dir)
+    root = resolve_cases_dir(cases_dir)
     cases = []
     for f in sorted(root.glob("*.yaml")):
         data = yaml.safe_load(f.read_text())
